@@ -1,0 +1,22 @@
+﻿# Virtual Environment
+myenv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Environment Variables
+.env
+
+# Node
+node_modules/
+package-lock.json
+
+# VS Code
+.vscode/
+
+# System Files
+.DS_Store
+Thumbs.db
