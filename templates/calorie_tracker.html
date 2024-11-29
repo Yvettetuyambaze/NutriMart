@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calorie Tracker - NutriSmart</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+
+    <style>
+        :root {
+            --primary-color: #2D3748;
+            --secondary-color: #48BB78;
+            --accent-color: #4299E1;
+            --background-color: #F7FAFC;
+            --text-color: #1A202C;
+            --card-background: #FFFFFF;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition-speed: 0.3s;
+            --gradient-start: #4299E1;
+            --gradient-end: #48BB78;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* Header & Navigation */
+        header {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            padding: 1rem 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.logo-image {
+    height: 40px;
+    width: auto;
+}
+
+.logo-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    text-decoration: none;
+}
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links li a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            transition: all var(--transition-speed);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-links li a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .nav-links .active a {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 20px;
+        }
+
+        /* Main Content Styles */
+        .header-title {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .weight-prediction {
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Calendar */
+        .calendar {
+            background: var(--card-background);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .calendar-day {
+            text-align: center;
+            padding: 0.5rem;
+        }
+
+        .day-label {
+            color: #6F767E;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .day-number {
+            font-size: 1rem;
+            color: var(--text-color);
+        }
+
+        .today {
+            background: var(--secondary-color);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        .today .day-label,
+        .today .day-number {
+            color: white;
+        }
+
+        /* Calorie Card */
+        .calorie-card {
+            background: var(--card-background);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--card-shadow);
+        }
+
+        .calorie-goal {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .goal-title {
+            font-size: 1.2rem;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .goal-number {
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+
+        .goal-icon {
+            color: var(--secondary-color);
+        }
+
+        .formula {
+            color: #6F767E;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Progress Circle */
+        .progress-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .stats-column {
+            flex: 1;
+        }
+
+        .stat-item {
+            margin-bottom: 1rem;
+        }
+
+        .stat-label {
+            color: #6F767E;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            color: var(--text-color);
+            font-weight: 500;
+            margin-top: 0.25rem;
+        }
+
+        .progress-circle {
+            position: relative;
+            width: 160px;
+            height: 160px;
+        }
+
+        .circle-bg {
+            fill: none;
+            stroke: #f0f0f0;
+            stroke-width: 12;
+        }
+
+        .circle {
+            fill: none;
+            stroke: var(--secondary-color);
+            stroke-width: 12;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        .circle-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .remaining {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .remaining-label {
+            color: #6F767E;
+            font-size: 0.9rem;
+        }
+
+        /* Macros */
+        .macros {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #EDF2F7;
+        }
+
+        .macro-item {
+            color: #6F767E;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .macro-icon {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .macro-value {
+            color: var(--text-color);
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+
+        /* Food Log */
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .meal-item {
+            background: var(--card-background);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            box-shadow: var(--card-shadow);
+            transition: transform var(--transition-speed);
+        }
+
+        .meal-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .meal-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .meal-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(72, 187, 120, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary-color);
+        }
+
+        .log-button {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: all var(--transition-speed);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .log-button:hover {
+            transform: translateY(-2px);
+            background-color: #3DA066;
+        }
+
+        /* Exercise Section */
+        .exercise-item {
+            background: var(--card-background);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            box-shadow: var(--card-shadow);
+            transition: transform var(--transition-speed);
+        }
+
+        .exercise-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .exercise-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .exercise-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(66, 153, 225, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-color);
+        }
+
+        .exercise-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .exercise-name {
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .exercise-subtitle {
+            color: #6F767E;
+            font-size: 0.9rem;
+        }
+
+        .calories {
+            color: #6F767E;
+            font-weight: 500;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            nav {
+                padding: 0 1rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hamburger {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                cursor: pointer;
+            }
+
+            .hamburger span {
+                width: 25px;
+                height: 3px;
+                background: white;
+                transition: all 0.3s;
+            }
+
+            .hamburger.active span:nth-child(1) {
+                transform: rotate(45deg) translate(5px, 5px);
+            }
+
+            .hamburger.active span:nth-child(2) {
+                opacity: 0;
+            }
+
+            .hamburger.active span:nth-child(3) {
+                transform: rotate(-45deg) translate(5px, -5px);
+            }
+
+            .nav-links.active {
+                display: flex;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 1.5rem;
+                z-index: 90;
+                padding: 2rem;
+            }
+
+            .progress-section {
+                flex-direction: column;
+                gap: 2rem;
+            }
+
+            .macros {
+                gap: 1rem;
+            }
+
+            .calendar {
+                overflow-x: auto;
+                padding: 1rem;
+            }
+
+            .calendar-day {
+                flex: 0 0 auto;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header-title {
+                font-size: 1.5rem;
+            }
+
+            .calendar {
+                padding: 1rem 0.5rem;
+            }
+
+            .calorie-card {
+                padding: 1.5rem;
+            }
+
+            .progress-circle {
+                width: 140px;
+                height: 140px;
+            }
+
+            .remaining {
+                font-size: 1.5rem;
+            }
+
+            .meal-item,
+            .exercise-item {
+                padding: 0.75rem;
+            }
+
+            .log-button {
+                padding: 0.5rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/" class="logo-container">
+                <img src="{{ url_for('static', filename='images/nutrismartlogo.png') }}" alt="NutriMart Logo" class="logo-image">
+                <span class="logo-text">NutriMart</span>
+            </a>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="/calorie-tracker"><i class="fas fa-fire"></i> Calorie Tracker</a></li>
+                <li><a href="/meal-plan"><i class="fas fa-calendar-alt"></i> My Plan</a></li>
+                <li><a href="/profile"><i class="fas fa-user"></i> Profile</a></li>
+                <li style="background-color: #3DA066;"><a href="#"><i class="fas fa-user"></i> SignIn/SignUp</a></li>
+
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h1 class="header-title">Calorie Tracker</h1>
+        <p class="weight-prediction">You'll lose 1.21 kg in 1 month</p>
+        <div class="calendar">
+            
+            <div class="calendar-day">
+                <div class="day-label">M</div>
+                <div class="day-number">25</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-label">T</div>
+                <div class="day-number">26</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-label">W</div>
+                <div class="day-number">27</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-label">T</div>
+                <div class="day-number">28</div>
+            </div>
+            <div class="calendar-day today">
+                <div class="day-label">Today</div>
+                <div class="day-number">29</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-label">S</div>
+                <div class="day-number">30</div>
+            </div>
+            <div class="calendar-day">
+                <div class="day-label">S</div>
+                <div class="day-number">1</div>
+            </div>
+        </div>
+
+        <div class="calorie-card">
+            <div class="calorie-goal">
+                <div class="goal-title">
+                    <i class="fas fa-bullseye goal-icon"></i>
+                    Calorie Goal: <span class="goal-number">1726 cal</span>
+                </div>
+                <i class="fas fa-pen"></i>
+            </div>
+            <p class="formula">
+                <i class="fas fa-calculator"></i>
+                Remaining = Goal - Food + Exercise
+            </p>
+
+            <div class="progress-section">
+                <div class="stats-column">
+                    <div class="stat-item">
+                        <div class="stat-label">
+                            <i class="fas fa-utensils"></i>
+                            Food Intake
+                        </div>
+                        <div class="stat-value">0 cal</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">
+                            <i class="fas fa-fire-alt"></i>
+                            Exercise Burn
+                        </div>
+                        <div class="stat-value">179 cal</div>
+                    </div>
+                </div>
+
+                <div class="progress-circle">
+                    <svg width="160" height="160" viewBox="0 0 160 160">
+                        <circle class="circle-bg" cx="80" cy="80" r="70"/>
+                        <circle class="circle" cx="80" cy="80" r="70" 
+                                style="stroke-dasharray: 440; stroke-dashoffset: 88"/>
+                    </svg>
+                    <div class="circle-text">
+                        <div class="remaining">1905</div>
+                        <div class="remaining-label">cal</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="macros">
+                <div class="macro-item">
+                    <i class="fas fa-hamburger macro-icon" style="color: var(--accent-color);"></i>
+                    Fat
+                    <div class="macro-value">0/38g</div>
+                </div>
+                <div class="macro-item">
+                    <i class="fas fa-bread-slice macro-icon" style="color: var(--secondary-color);"></i>
+                    Carbs
+                    <div class="macro-value">0/216g</div>
+                </div>
+                <div class="macro-item">
+                    <i class="fas fa-drumstick-bite macro-icon" style="color: var(--primary-color);"></i>
+                    Protein
+                    <div class="macro-value">0/129g</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="food-log">
+            <h2 class="section-title">
+                <i class="fas fa-clipboard-list"></i>
+                Food Intake
+            </h2>
+            
+            <div class="meal-item">
+                <div class="meal-info">
+                    <div class="meal-icon">
+                        <i class="fas fa-coffee"></i>
+                    </div>
+                    <span>Breakfast</span>
+                </div>
+                <button class="log-button">
+                    <i class="fas fa-plus"></i> Log
+                </button>
+            </div>
+
+            <div class="meal-item">
+                <div class="meal-info">
+                    <div class="meal-icon">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <span>Lunch</span>
+                </div>
+                <button class="log-button">
+                    <i class="fas fa-plus"></i> Log
+                </button>
+            </div>
+
+            <div class="meal-item">
+                <div class="meal-info">
+                    <div class="meal-icon">
+                        <i class="fas fa-moon"></i>
+                    </div>
+                    <span>Dinner</span>
+                </div>
+                <button class="log-button">
+                    <i class="fas fa-plus"></i> Log
+                </button>
+            </div>
+
+            <div class="meal-item">
+                <div class="meal-info">
+                    <div class="meal-icon">
+                        <i class="fas fa-apple-alt"></i>
+                    </div>
+                    <span>Snack</span>
+                </div>
+                <button class="log-button">
+                    <i class="fas fa-plus"></i> Log
+                </button>
+            </div>
+        </div>
+
+        <div class="exercise-section">
+            <h2 class="section-title">
+                <i class="fas fa-running"></i>
+                Exercise Burn
+            </h2>
+            
+            <div class="exercise-item">
+                <div class="exercise-info">
+                    <div class="exercise-icon">
+                        <i class="fas fa-dumbbell"></i>
+                    </div>
+                    <div class="exercise-details">
+                        <span class="exercise-name">Exercise Burn</span>
+                        <span class="exercise-subtitle">179 cal</span>
+                    </div>
+                </div>
+                <button class="log-button">
+                    <i class="fas fa-plus"></i> Log
+                </button>
+            </div>
+
+            <div class="exercise-item">
+                <div class="exercise-info">
+                    <div class="exercise-icon">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <div class="exercise-details">
+                        <span class="exercise-name">Apple Health</span>
+                        <span class="exercise-subtitle">Steps</span>
+                    </div>
+                </div>
+                <span class="calories">179 cal</span>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .footer {
+            background: linear-gradient(135deg, var(--primary-color), #1a202c);
+            color: #fff;
+            padding: 4rem 0 2rem;
+            margin-top: 4rem;
+        }
+    
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+    
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+    
+        .footer-section h3 {
+            color: #fff;
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    
+        .footer-section p {
+            color: #cbd5e0;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+    
+        .footer-links {
+            list-style: none;
+        }
+    
+        .footer-links li {
+            margin-bottom: 0.75rem;
+        }
+    
+        .footer-links a {
+            color: #cbd5e0;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all var(--transition-speed);
+        }
+    
+        .footer-links a:hover {
+            color: var(--secondary-color);
+            transform: translateX(5px);
+        }
+    
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+    
+        .social-link {
+            background: rgba(255, 255, 255, 0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            text-decoration: none;
+            transition: all var(--transition-speed);
+        }
+    
+        .social-link:hover {
+            background: var(--secondary-color);
+            transform: translateY(-3px);
+        }
+    
+        .newsletter-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+    
+        .newsletter-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-family: inherit;
+        }
+    
+        .newsletter-input::placeholder {
+            color: #cbd5e0;
+        }
+    
+        .newsletter-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            background: var(--secondary-color);
+            color: #fff;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+        }
+    
+        .newsletter-button:hover {
+            background: #3DA066;
+            transform: translateY(-2px);
+        }
+    
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 2rem;
+            text-align: center;
+            color: #cbd5e0;
+            font-size: 0.9rem;
+        }
+    
+        .footer-bottom-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+    
+        .footer-bottom-links a {
+            color: #cbd5e0;
+            text-decoration: none;
+            transition: color var(--transition-speed);
+        }
+    
+        .footer-bottom-links a:hover {
+            color: var(--secondary-color);
+        }
+    
+        .app-badges {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+    
+        .app-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #fff;
+            text-decoration: none;
+            transition: all var(--transition-speed);
+        }
+    
+        .app-badge:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+    
+        @media (max-width: 1024px) {
+            .footer-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    
+        @media (max-width: 768px) {
+            .footer {
+                padding: 3rem 0 2rem;
+            }
+    
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+    
+            .newsletter-form {
+                flex-direction: column;
+            }
+    
+            .footer-bottom-links {
+                flex-direction: column;
+                gap: 1rem;
+            }
+    
+            .app-badges {
+                flex-direction: column;
+            }
+        }
+    </style>
+    
+    <!-- Footer HTML -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <!-- About Section -->
+                <div class="footer-section">
+                    <h3><i class="fas fa-heart"></i> About NutriSmart</h3>
+                    <p>Empowering you to achieve your health and fitness goals through smart nutrition tracking and personalized insights.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+    
+                <!-- Quick Links -->
+                <div class="footer-section">
+                    <h3><i class="fas fa-link"></i> Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="/"><i class="fas fa-chevron-right"></i> Home</a></li>                        
+                        <li><a href="/calorie-tracker"><i class="fas fa-chevron-right"></i> Calorie Tracker</a></li>
+                        <li><a href="/meal-plan"><i class="fas fa-chevron-right"></i> Meal Plans</a></li>
+                        <li><a href="/profile"><i class="fas fa-chevron-right"></i> Profile</a></li>
+                    </ul>
+                </div>
+    
+                <!-- Support -->
+                <div class="footer-section">
+                    <h3><i class="fas fa-headset"></i> Support</h3>
+                    <ul class="footer-links">
+                        <li><a href="#"><i class="fas fa-envelope"></i> support@nutrismart.com</a></li>
+                        <li><a href="#"><i class="fas fa-phone"></i> +25057121375</a></li>
+                        <li><a href="#"><i class="fas fa-question-circle"></i> FAQ</a></li>
+                        <li><a href="#"><i class="fas fa-book"></i> Help Center</a></li>
+                        <li><a href="#"><i class="fas fa-shield-alt"></i> Privacy Policy</a></li>
+                    </ul>
+                </div>
+    
+                <!-- Newsletter -->
+                <div class="footer-section">
+                    <h3><i class="fas fa-paper-plane"></i> Newsletter</h3>
+                    <p>Subscribe to our newsletter for tips, recipes, and updates.</p>
+                    <form class="newsletter-form">
+                        <input type="email" class="newsletter-input" placeholder="Enter your email">
+                        <button type="submit" class="newsletter-button">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </form>
+                    <div class="app-badges">
+                        <a href="#" class="app-badge">
+                            <i class="fab fa-apple"></i>
+                            App Store
+                        </a>
+                        <a href="#" class="app-badge">
+                            <i class="fab fa-google-play"></i>
+                            Google Play
+                        </a>
+                    </div>
+                </div>
+            </div>
+    
+            <div class="footer-bottom">
+                <p>&copy; 2024 NutriSmart. All rights reserved.</p>
+                <div class="footer-bottom-links">
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Cookie Policy</a>
+                    <a href="#">Accessibility</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+   
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Profile - NutriMart</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Base Styles */
+        :root {
+            --primary-color: #1A1D1F;
+            --secondary-color: #48BB78;
+            --accent-color: #4299E1;
+            --background-color: #F7FAFC;
+            --text-color: #1A202C;
+            --text-gray: #A0AEC0;
+            --card-background: #FFFFFF;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --gradient-start: #4299E1;
+            --gradient-end: #48BB78;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navigation Styles */
+        header {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .logo-image {
+            height: 35px;
+            width: auto;
+        }
+
+        .logo-text {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        /* Main Content Styles */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            flex: 1;
+        }
+
+        .profile-card {
+            background: var(--card-background);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+        }
+
+        .bmi-section {
+            margin-bottom: 2rem;
+        }
+
+        .bmi-value {
+            font-size: clamp(2rem, 5vw, 3rem);
+            display: flex;
+            align-items: baseline;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .bmi-category {
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+        }
+
+        .bmi-slider {
+            width: 100%;
+            margin: 2rem 0;
+            position: relative;
+            height: 8px;
+            background: #EDF2F7;
+            border-radius: 4px;
+        }
+
+        .bmi-range {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, #4299E1, #48BB78, #F6AD55, #F56565);
+            border-radius: 4px;
+        }
+
+        .bmi-scale {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: clamp(0.75rem, 2vw, 0.9rem);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hamburger {
+                display: flex;
+                z-index: 1001;
+            }
+
+            .nav-links {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                padding: 2rem;
+                z-index: 1000;
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-card {
+                padding: 1.5rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .bmi-value {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .stat-item {
+                flex-direction: column;
+                text-align: center;
+                padding: 1.5rem;
+            }
+
+            .stat-icon {
+                margin-bottom: 0.5rem;
+            }
+
+            .profile-card {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/" class="logo-container">
+                <img src="{{ url_for('static', filename='images/nutrismartlogo.png') }}" alt="NutriMart Logo" class="logo-image">
+                <span class="logo-text">NutriMart</span>
+            </a>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="/calorie-tracker"><i class="fas fa-fire"></i> Calorie Tracker</a></li>
+                <li><a href="/meal-plan"><i class="fas fa-calendar-alt"></i> My Plan</a></li>
+                <li><a href="/profile"><i class="fas fa-user"></i> Profile</a></li>
+                <li style="background-color: #3DA066;"><a href="#"><i class="fas fa-user"></i> SignIn/SignUp</a></li>
+
+            </ul>
+        </nav>
+    </header>
+    <div class="container">
+        <div class="profile-card">
+            <h1 class="card-title">Profile</h1>
+
+            <div class="bmi-section">
+                <div class="bmi-header">
+                    <h2 class="bmi-title">Body Mass Index (BMI)</h2>
+                    <div class="bmi-value">
+                        25.9
+                        <span class="bmi-category">Overweight</span>
+                    </div>
+                    <p class="bmi-info">
+                        High BMI leads to greater health risks. 
+                        <a href="#">See Source of recommendations</a>
+                    </p>
+                </div>
+
+                <div class="bmi-slider">
+                    <div class="bmi-range"></div>
+                    <div class="bmi-marker" style="left: 65%;"></div>
+                </div>
+                <div class="bmi-scale">
+                    <span>15</span>
+                    <span>16</span>
+                    <span>18.5</span>
+                    <span>25</span>
+                    <span>30</span>
+                    <span>35</span>
+                    <span>40</span>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-weight"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Target weight</div>
+                        <div class="stat-value">61.2 kg</div>
+                    </div>
+                </div>
+
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Level</div>
+                        <div class="stat-value">Beginner</div>
+                    </div>
+                </div>
+
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-running"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Activity level</div>
+                        <div class="stat-value">Lightly Active</div>
+                    </div>
+                </div>
+
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-label">Illness attention</div>
+                        <div class="stat-value">None</div>
+                    </div>
+                </div>
+            </div>
+
+          
+        </div>
+    </div>
+    <style>
+        .footer {
+            background: linear-gradient(135deg, var(--primary-color), #1a202c);
+            color: #fff;
+            padding: 4rem 0 2rem;
+            margin-top: 4rem;
+        }
+    
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+    
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+    
+        .footer-section h3 {
+            color: #fff;
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    
+        .footer-section p {
+            color: #cbd5e0;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+    
+        .footer-links {
+            list-style: none;
+        }
+    
+        .footer-links li {
+            margin-bottom: 0.75rem;
+        }
+    
+        .footer-links a {
+            color: #cbd5e0;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all var(--transition-speed);
+        }
+    
+        .footer-links a:hover {
+            color: var(--secondary-color);
+            transform: translateX(5px);
+        }
+    
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+    
+        .social-link {
+            background: rgba(255, 255, 255, 0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            text-decoration: none;
+            transition: all var(--transition-speed);
+        }
+    
+        .social-link:hover {
+            background: var(--secondary-color);
+            transform: translateY(-3px);
+        }
+    
+        .newsletter-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+    
+        .newsletter-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-family: inherit;
+        }
+    
+        .newsletter-input::placeholder {
+            color: #cbd5e0;
+        }
+    
+        .newsletter-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            background: var(--secondary-color);
+            color: #fff;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+        }
+    
+        .newsletter-button:hover {
+            background: #3DA066;
+            transform: translateY(-2px);
+        }
+    
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 2rem;
+            text-align: center;
+            color: #cbd5e0;
+            font-size: 0.9rem;
+        }
+    
+        .footer-bottom-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+    
+        .footer-bottom-links a {
+            color: #cbd5e0;
+            text-decoration: none;
+            transition: color var(--transition-speed);
+        }
+    
+        .footer-bottom-links a:hover {
+            color: var(--secondary-color);
+        }
+    
+        .app-badges {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+    
+        .app-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #fff;
+            text-decoration: none;
+            transition: all var(--transition-speed);
+        }
+    
+        .app-badge:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+    
+        @media (max-width: 1024px) {
+            .footer-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    
+        @media (max-width: 768px) {
+            .footer {
+                padding: 3rem 0 2rem;
+            }
+    
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+    
+            .newsletter-form {
+                flex-direction: column;
+            }
+    
+            .footer-bottom-links {
+                flex-direction: column;
+                gap: 1rem;
+            }
+    
+            .app-badges {
+                flex-direction: column;
+            }
+        }
+    </style>
+    
+    <!-- Footer HTML -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <!-- About Section -->
+                <div class="footer-section">
+                    <h3><i class="fas fa-heart"></i> About NutriSmart</h3>
+                    <p>Empowering you to achieve your health and fitness goals through smart nutrition tracking and personalized insights.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+    
+                <!-- Quick Links -->
+                <div class="footer-section">
+                    <h3><i class="fas fa-link"></i> Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="/"><i class="fas fa-chevron-right"></i> Home</a></li>                        
+                        <li><a href="/calorie-tracker"><i class="fas fa-chevron-right"></i> Calorie Tracker</a></li>
+                        <li><a href="/meal-plan"><i class="fas fa-chevron-right"></i> Meal Plans</a></li>
+                        <li><a href="/profile"><i class="fas fa-chevron-right"></i> Profile</a></li>
+                    </ul>
+                </div>
+    
+                <!-- Support -->
+                <div class="footer-section">
+                    <h3><i class="fas fa-headset"></i> Support</h3>
+                    <ul class="footer-links">
+                        <li><a href="#"><i class="fas fa-envelope"></i> support@nutrismart.com</a></li>
+                        <li><a href="#"><i class="fas fa-phone"></i> +25057121375</a></li>
+                        <li><a href="#"><i class="fas fa-question-circle"></i> FAQ</a></li>
+                        <li><a href="#"><i class="fas fa-book"></i> Help Center</a></li>
+                        <li><a href="#"><i class="fas fa-shield-alt"></i> Privacy Policy</a></li>
+                    </ul>
+                </div>
+    
+                <!-- Newsletter -->
+                <div class="footer-section">
+                    <h3><i class="fas fa-paper-plane"></i> Newsletter</h3>
+                    <p>Subscribe to our newsletter for tips, recipes, and updates.</p>
+                    <form class="newsletter-form">
+                        <input type="email" class="newsletter-input" placeholder="Enter your email">
+                        <button type="submit" class="newsletter-button">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </form>
+                    <div class="app-badges">
+                        <a href="#" class="app-badge">
+                            <i class="fab fa-apple"></i>
+                            App Store
+                        </a>
+                        <a href="#" class="app-badge">
+                            <i class="fab fa-google-play"></i>
+                            Google Play
+                        </a>
+                    </div>
+                </div>
+            </div>
+    
+            <div class="footer-bottom">
+                <p>&copy; 2024 NutriSmart. All rights reserved.</p>
+                <div class="footer-bottom-links">
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Cookie Policy</a>
+                    <a href="#">Accessibility</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

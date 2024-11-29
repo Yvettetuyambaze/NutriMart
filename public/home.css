@@ -1,0 +1,96 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-image: url(https://cdn.hipwallpaper.com/i/6/60/J0HGDL.jpg);
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.wrapper {
+  display: flex;
+  width: 100%;
+  align-items: stretch;
+}
+
+#content {
+  width: 100%;
+  padding: 20px;
+}
+
+.cal {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btns {
+  background-color: #007BFF;
+  border-radius: 20px;
+}
+
+.btns:hover {
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.5), 0 6px 20px rgba(0, 123, 255, 0.19);
+}
+
+.userName {
+  margin-top: 15px;
+  font-size: 25px;
+  font-weight: bold;
+  color: #007BFF;
+}
+
+.bmi {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 10px 20px;
+  border-radius: 30px;
+}
+
+.profile-pic {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5), 0 6px 20px rgba(0, 0, 0, 0.19);
+}
+
+.custom-file-upload {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 10px;
+  display: inline-block;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+.carousel-inner img {
+  width: 100%;
+  max-height: 500px;
+  object-fit: cover;
+}
+
+.container.bg-light {
+  background-color: rgb(255, 255, 255);
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#image {
+  display: none;
+}
+
+#cimage {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  body {
+      font-size: inherit;
+      line-height: inherit;
+  }
+  .profile-pic {
+      width: inherit;
+      height: inherit;
+  }
+}

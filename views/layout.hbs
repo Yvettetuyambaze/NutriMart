@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>{{title}}</title>
+    <link rel="icon" type="image/png" href="nutrismartlogo.png">
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="https://unpkg.com/ionicons@4.5.10-0/dist/css/ionicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/layout.css">
+    <link rel='stylesheet' type='text/css' media='screen' href={{style}}>
+</head>
+<body class="bg-light">
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar" class="bg-dark">
+            <div class="sidebar-header">
+                <a href="/home">
+                    <img src="nutrismartlogo.png" width="50" height="50" class="d-inline-block align-bottom" alt="">
+                    <b class="logo">NUTRISMART</b>
+                </a>
+            </div>
+            <ul class="list-unstyled components">
+                <li>
+                    <a href="/home"><i class="icon ion-ios-home"></i> Home</a>
+                </li>
+                {{!-- <li>
+                    <a href="/login"><i class="icon ion-ios-log-in"></i> Login/Registration</a>
+                </li> --}}
+                <li>
+                    <a href="/profile"><i class="icon ion-ios-person"></i> My Profile</a>
+                </li>
+                <li>
+                    <a href="/dashboard"><i class="icon ion-ios-speedometer"></i> Dashboard</a>
+                </li>
+                <li>
+                    <a href="/dishrecognition"><i class="icon ion-ios-nutrition"></i> Food Image Recognition</a>
+                </li>
+                <li id="more-options">
+                    <a href="#"><i class="icon ion-ios-arrow-down"></i> View More</a>
+                </li>
+                <div id="hidden-options" style="display: none;">
+                    <li>
+                        <a href="/manualentry"><i class="icon ion-ios-create"></i> Manual Food Entry</a>
+                    </li>
+                    <li>
+                        <a href="/mealplanning"><i class="icon ion-ios-calendar"></i> Meal Planning</a>
+                    </li>
+                    <li>
+                        <a href="/recipes"><i class="icon ion-ios-book"></i> Recipes</a>
+                    </li>
+                    <li>
+                        <a href="/progresstracking"><i class="icon ion-ios-stats"></i> Progress Tracking</a>
+                    </li>
+                </div>
+                <li>
+                    <a href="/settings"><i class="icon ion-ios-settings"></i> Settings</a>
+                </li>
+                <li>
+                    <a href="/logout"><i class="icon ion-ios-log-out"></i> Logout</a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Page Content -->
+        <div id="content">
+            <!-- Header -->
+            <nav class="navbar navbar-dark bg-dark sticky-top">
+                <button type="button" id="sidebarCollapse" class="btn btn-info">
+                    <i class="fa fa-bars"></i>
+                </button>
+            </nav>
+
+            <!-- Main Content -->
+            <div class="container-fluid">
+                {{{body}}}
+            </div>
+
+            <!-- Footer -->
+            <footer class="page-footer font-small mdb-color darken-3 pt-4 foot" style="background-color:black">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-sm-3 text-secondary">
+                            <h6>About Us</h6>
+                            <hr style="background-color: tomato">
+                            <p>Developer:</p>
+                            <a href="https://www.linkedin.com/in/yvette-tuyambaze-79b42720a/">Yvette Tuyambaze</a>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="embed-responsive embed-responsive-16by9 md-4">
+                                <iframe style="border-radius: 20px" class="embed-responsive-item" src="https://www.youtube.com/embed/1LWuG1lOXJs"
+                                    allowfullscreen></iframe>
+                            </div>
+                        </div>
+                        <div class="col-sm-3 text-secondary">
+                            <h6>Contact Us</h6>
+                            <hr style="background-color: tomato">
+                            <a href="mailto:sudhir.kr23.1995@gmail.com?Subject=Hello%20again" target="_top">
+                                <i class="icon ion-md-mail"></i>&nbsp;E-mail
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-copyright text-center text-secondary py-3">
+                    &copy;2024 Copyright: <a href="/home" class="text-warning">NUTRISMART</a>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Script Files -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src={{script}}></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#sidebarCollapse').on('click', function () {
+                $('#sidebar').toggleClass('active');
+                $('#content').toggleClass('active');
+            });
+
+            $('#more-options').on('click', function () {
+                $('#hidden-options').toggle();
+                $(this).find('i').toggleClass('ion-ios-arrow-down ion-ios-arrow-up');
+            });
+        });
+    </script>
+</body>
+</html>

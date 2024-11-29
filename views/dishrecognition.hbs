@@ -1,0 +1,40 @@
+{{!< layout}}
+
+<h1>Dish Recognition and Personalized Recommendations</h1>
+
+<form id="userInfoForm">
+    <h2>Personal Information</h2>
+    <input type="text" name="name" placeholder="Name" required>
+    <input type="number" name="age" placeholder="Age" required>
+    <input type="text" name="gender" placeholder="Gender" required>
+    <input type="number" name="height" placeholder="Height (cm)" required>
+    <input type="number" name="weight" placeholder="Weight (kg)" required>
+    <input type="text" name="activity_level" placeholder="Activity Level" required>
+    <input type="text" name="health_goal" placeholder="Health Goal" required>
+    <input type="text" name="dietary_restrictions" placeholder="Dietary Restrictions">
+    <button type="submit">Submit</button>
+</form>
+
+<div id="bmiResult" style="display:none;">
+    <h2>BMI Result</h2>
+    <p id="bmiValue"></p>
+    <p id="bmiCategory"></p>
+</div>
+
+<form id="imageUploadForm" style="display:none;">
+    <h2>Upload Dish Image</h2>
+    <input type="file" name="image" accept="image/*" required>
+    <button type="submit">Upload and Analyze</button>
+</form>
+
+<div id="results" style="display:none;">
+    <h2>Results</h2>
+    <img id="dishImage" src="" alt="Uploaded dish">
+    <p id="predictedDish"></p>
+    <p id="confidence"></p>
+    <div id="nutritionalInfo"></div>
+    <div id="similarDishes"></div>
+    <div id="recommendations"></div>
+</div>
+
+<script src="/dishrecognition.js"></script>

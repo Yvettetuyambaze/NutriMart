@@ -1,0 +1,103 @@
+/* layout.css */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+.wrapper {
+    display: flex;
+    width: 100%;
+}
+
+#sidebar {
+    min-width: 250px;
+    max-width: 250px;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: -250px;
+    overflow-y: auto;
+    background: #343a40; /* Dark background color */
+    transition: all 0.3s;
+    color: white;
+}
+
+#sidebar.active {
+    left: 0;
+}
+
+#sidebar .sidebar-header {
+    padding: 20px;
+    background: #343a40; /* Blue background color */
+}
+
+#sidebar ul.components {
+    padding: 20px 0;
+    border-bottom: 1px solid #47748b;
+}
+
+#sidebar ul.components li a {
+    padding: 10px;
+    font-size: 1.1em;
+    display: block;
+    color: white;
+    transition: 0.3s;
+}
+
+#sidebar ul.components li a:hover {
+    background: #0069D9; /* Darker blue background color on hover */
+}
+
+#content {
+    width: 100%;
+    padding: 20px;
+    transition: margin-left 0.3s;
+}
+
+#content.active {
+    margin-left: 250px; /* Adjust margin when sidebar is active */
+}
+
+.navbar {
+    z-index: 1000; /* Ensure navbar stays above sidebar */
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.footer {
+    background: #343a40; /* Dark background color for footer */
+    color: white;
+}
+
+.btn-info {
+    background-color: #0069D9 !important; /* Change button color to blue */
+}
+
+.btn-logout {
+    color: white;
+}
+
+@media (max-width: 768px) {
+    #sidebar {
+        left: -250px; /* Initially hide sidebar on small screens */
+    }
+    #sidebar.active {
+        left: 0;
+    }
+    #content {
+        margin-left: 0;
+        padding-top: 50px; /* Space for fixed navbar */
+    }
+    #content.active {
+        margin-left: 0;
+    }
+}

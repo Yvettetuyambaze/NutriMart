@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{title}}</title>
+    <link rel="icon" type="image/png" href="nutrismartlogo.png">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="/login.css">
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row min-vh-100">
+            <!-- Left Column with Image -->
+            <div class="col-md-6 d-none d-md-block text-center">
+                <div class="d-flex align-items-center justify-content-center" style="height: 100%;">
+                    <img src="foodi.jpg" alt="food image" class="img-fluid food-image">
+                </div>
+            </div>
+
+            <!-- Right Column with Login Form -->
+            <div class="col-md-6 col-sm-12 align-self-center">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <img src="nutrismartlogo.png" alt="logo" class="logo">
+                            <h1 class="text-primary mb-0">Sign in with Google or Log in to your account</h1>
+                        </div>
+                        <div class="d-flex justify-content-center mb-4">
+                            <div class="g-signin2" data-onsuccess="onSignIn"></div>
+                        </div>
+                        <form action="/auth" method="POST" autocomplete="on">
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                    </div>
+                                    <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required autofocus>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="password">Password</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    </div>
+                                    <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" maxlength="8" required>
+                                </div>
+                            </div>
+                            <div class="form-group form-check">
+                                <input type="checkbox" class="form-check-input" id="rememberMe">
+                                <label class="form-check-label" for="rememberMe">Remember Me</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Login</button>
+                        </form>
+                        <div class="text-center mt-3">
+                            <a href="#" class="text-muted">Forgot password?</a>
+                        </div>
+                        <hr>
+                        <div class="text-center">
+                            <p>Don't have an account? <a href="/signup" class="text-primary" id="registerLink">Register Now</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById("registerLink").addEventListener("click", function(event) {
+            event.preventDefault();
+            window.location.href = "/signup";
+        });
+
+        function onSignIn(googleUser) {
+            var profile = googleUser.getBasicProfile();
+            console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
+            console.log('Name: ' + profile.getName());
+            console.log('Image URL: ' + profile.getImageUrl());
+            console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
+
+            // The ID token you need to pass to your backend:
+            var id_token = googleUser.getAuthResponse().id_token;
+            console.log("ID Token: " + id_token);
+
+            // Send the token to your server
+            fetch('/google-signin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({token: id_token})
+            }).then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Network response was not ok.');
+            }).then(data => {
+                console.log('Success:', data);
+                
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>

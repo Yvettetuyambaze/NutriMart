@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Signup | NutriSmart</title>
+    <link rel="icon" type="image/png" href="nutrismartlogo.png">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="/signup.css">
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <!-- Left Column with Image -->
+            <div class="col-lg-6 col-md-12 text-center mb-4">
+                <img src="foodimage.jpg" alt="signup image" class="img-fluid signup-image">
+            </div>
+
+            <!-- Right Column with Signup Form -->
+            <div class="col-lg-6 col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <img src="nutrismartlogo.png" alt="logo" class="logo">
+                            <h1 class="text-primary mb-0">Sign up with Google</h1>
+                        </div>
+                       <div class="d-flex justify-content-center mb-4">
+                            <div class="g-signin2" data-onsuccess="onSignIn"></div>
+                        </div>
+                        <div class="text-center mb-4">
+                            <h1>or </h1>
+                            <h1>Create your account</h1>
+                        </div>
+                        <form name="signupForm" action="/signup" onsubmit="return validateForm()" method="POST" autocomplete="on">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="fname">First Name</label>
+                                        <input type="text" class="form-control" id="fname" name="fname" placeholder="First Name" required autofocus>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="lname">Last Name</label>
+                                        <input type="text" class="form-control" id="lname" name="lname" placeholder="Last Name" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="email">Email</label>
+                                        <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="password">Password</label>
+                                        <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" maxlength="8" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="cPass">Confirm Password</label>
+                                        <input type="password" class="form-control" id="cPass" name="cPass" placeholder="Re-enter your password" maxlength="8" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="dob">Date of Birth</label>
+                                        <input type="date" class="form-control" id="dob" name="dob" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="weight">Current Weight</label>
+                                        <input type="number" class="form-control" id="weight" name="weight" placeholder="Weight (kg)">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="height">Current Height</label>
+                                        <input type="number" class="form-control" id="height" name="height" placeholder="Height (m)" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Register</button>
+                        </form>
+                        <div class="text-center mt-3">
+                            <span class="text-muted">Already have an account?</span>
+                            <a class="text-primary" href="/">Login</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function validateForm() {
+            var form = document.forms["signupForm"];
+            var fname = form["fname"].value;
+            var lname = form["lname"].value;
+            var email = form["email"].value;
+            var password = form["password"].value;
+            var cPass = form["cPass"].value;
+            
+            if (fname == "" || lname == "" || email == "" || password == "" || cPass == "") {
+                alert("All required fields must be filled out");
+                return false;
+            }
+            
+            if (password !== cPass) {
+                alert("Passwords do not match.");
+                return false;
+            }
+            
+            alert("Registration Successful");
+            return true;
+        }
+
+        function onSignIn(googleUser) {
+            var profile = googleUser.getBasicProfile();
+            console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
+            console.log('Name: ' + profile.getName());
+            console.log('Image URL: ' + profile.getImageUrl());
+            console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
+
+            // The ID token you need to pass to your backend:
+            var id_token = googleUser.getAuthResponse().id_token;
+            console.log("ID Token: " + id_token);
+
+            // Send the token to your server
+            fetch('/google-signin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({token: id_token})
+            }).then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Network response was not ok.');
+            }).then(data => {
+                console.log('Success:', data);
+                // Perform further actions after successful sign-in
+                // e.g., redirect to the dashboard or show a welcome message
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
