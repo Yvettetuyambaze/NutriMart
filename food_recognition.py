@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
-from sklearn.metrics.pairwise import cosine_similarity
 import os
 
 # Adjust these paths according to your project structure
@@ -24,10 +23,10 @@ def predict_dish(image_path):
     prediction = model.predict(preprocessed_image)
     predicted_class = np.argmax(prediction[0])
     confidence = float(np.max(prediction[0]))  # Ensure this is a Python float
-    
+
     class_names = list(df['Name'].unique())
     predicted_dish = class_names[predicted_class]
-    
+
     return predicted_dish, confidence
 
 def get_nutritional_info(dish_name):

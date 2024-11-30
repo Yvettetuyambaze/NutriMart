@@ -1,6 +1,37 @@
 let nutritionChart = null;
 let recommendationCharts = [];
 
+async function uploadImage(formData) {
+    try {
+        const response = await fetch('/predict', {
+            method: 'POST',
+            body: formData
+        });
+
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            const result = await response.json();
+            if (response.ok) {
+                displayResults(result);
+                displayNutritionalInfo(result.nutritional_info);
+                displayUserProfile();
+                displayRecommendations(result.recommendations);
+                scrollToResults();
+            } else {
+                throw new Error(result.error || 'Unknown error occurred');
+            }
+        } else {
+            const text = await response.text();
+            throw new Error(`Invalid response format. Status: ${response.status}, Body: ${text}`);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred while processing the image. Please try again.');
+    } finally {
+        hideLoadingSpinner();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize navigation
     initializeNavigation();
@@ -27,47 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(uploadForm);
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = `
-                <div class="analyzing">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    Analyzing your dish...
-                </div>
-            `;
             showLoadingSpinner();
-            
-            try {
-                const response = await fetch('/predict', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("application/json") !== -1) {
-                    const result = await response.json();
-                    if (response.ok) {
-                        displayResults(result);
-                        displayNutritionalInfo(result.nutritional_info);
-                        displayUserProfile();
-                        displayRecommendations(result.recommendations);
-                        scrollToResults();
-                    } else {
-                        throw new Error(result.error || 'Unknown error occurred');
-                    }
-                } else {
-                    const text = await response.text();
-                    throw new Error(`Invalid response format. Status: ${response.status}, Body: ${text}`);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                resultsDiv.innerHTML = `
-                    <div class="error">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Error: ${error.message}
-                    </div>`;
-            } finally {
-                hideLoadingSpinner();
-            }
+            await uploadImage(formData);
         });
     }
 });
@@ -422,7 +414,7 @@ function displayUserProfile() {
                     <i class="fas fa-calculator"></i>
                     <h3>BMI Calculator</h3>
                     </div>
-                <div class="bmi-value">${bmi.toFixed(1)}</div>
+                    <div class="bmi-value">${bmi.toFixed(1)}</div>
                 <div class="bmi-category ${bmiCategory.toLowerCase().replace(' ', '-')}">
                     ${bmiCategory}
                 </div>
@@ -614,14 +606,6 @@ window.addEventListener('resize', () => {
         });
     }
 });
-
-// Initialize tooltips if needed
-function initTooltips() {
-    const tooltips = document.querySelectorAll('[data-tooltip]');
-    tooltips.forEach(tooltip => {
-        // Initialize tooltips if you decide to add them
-    });
-}
 
 // Export for testing if needed
 if (typeof module !== 'undefined' && module.exports) {
