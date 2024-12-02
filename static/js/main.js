@@ -42,29 +42,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: formData
                 });
                 
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("application/json") !== -1) {
-                    const result = await response.json();
-                    if (response.ok) {
-                        displayResults(result);
-                        displayNutritionalInfo(result.nutritional_info);
-                        displayUserProfile();
-                        displayRecommendations(result.recommendations);
-                        scrollToResults();
-                    } else {
-                        throw new Error(result.error || 'Unknown error occurred');
-                    }
-                } else {
-                    const text = await response.text();
-                    throw new Error(`Invalid response format. Status: ${response.status}, Body: ${text}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                
+                const result = await response.json();
+                displayResults(result);
+                displayNutritionalInfo(result.nutritional_info);
+                displayUserProfile();
+                displayRecommendations(result.recommendations);
+                scrollToResults();
+                
             } catch (error) {
                 console.error('Error:', error);
                 resultsDiv.innerHTML = `
                     <div class="error">
                         <i class="fas fa-exclamation-circle"></i>
                         Error: ${error.message}
-                    </div>`;
+                    </div>
+                `;
             } finally {
                 hideLoadingSpinner();
             }
@@ -170,7 +166,7 @@ function displayNutritionalInfo(nutritionalInfo) {
         { name: 'Calories', value: nutritionalInfo['Calories'] || 0, unit: 'kcal', max: 2000, icon: 'fa-fire' },
         { name: 'Protein', value: nutritionalInfo['Protein (g)'] || 0, unit: 'g', max: 50, icon: 'fa-dumbbell' },
         { name: 'Carbs', value: nutritionalInfo['Carbs (g)'] || 0, unit: 'g', max: 300, icon: 'fa-bread-slice' },
-        { name: 'Fat', value: nutritionalInfo['Total Fat (g)'] || 0, unit: 'g', max: 65, icon: 'fa-cheese', className: 'fats' }, // Changed this line
+        { name: 'Fat', value: nutritionalInfo['Total Fat (g)'] || 0, unit: 'g', max: 65, icon: 'fa-cheese' },
         { name: 'Fiber', value: nutritionalInfo['Fiber (g)'] || 0, unit: 'g', max: 30, icon: 'fa-seedling' }
     ];
     
@@ -180,7 +176,7 @@ function displayNutritionalInfo(nutritionalInfo) {
         item.className = 'nutrition-item';
         
         item.innerHTML = `
-            <div class="circle-progress ${nutrient.className || nutrient.name.toLowerCase()}" style="--progress-rotation: ${(percentage / 100) * 360}deg">
+            <div class="circle-progress ${nutrient.name.toLowerCase()}" style="--progress-rotation: ${(percentage / 100) * 360}deg">
                 <div class="nutrition-value">
                     <i class="fas ${nutrient.icon}"></i>
                     <span>${Math.round(nutrient.value)}${nutrient.unit}</span>
@@ -188,10 +184,6 @@ function displayNutritionalInfo(nutritionalInfo) {
             </div>
             <div class="nutrition-label">${nutrient.name}</div>
         `;
-        
-        if (percentage >= 50) {
-            item.querySelector('.circle-progress').classList.add('full');
-        }
         
         nutritionCircles.appendChild(item);
     });
@@ -206,7 +198,6 @@ function displayNutritionalInfo(nutritionalInfo) {
 }
 
 function createDetailedNutritionSection(nutritionalInfo) {
-    // Filter out main nutrients and non-nutritional info
     const detailedNutrients = Object.entries(nutritionalInfo).filter(([key, value]) => {
         const mainNutrientKeys = ['Calories', 'Protein (g)', 'Carbs (g)', 'Total Fat (g)', 'Fiber (g)'];
         return !mainNutrientKeys.includes(key) && 
@@ -242,25 +233,9 @@ function createDetailedNutritionSection(nutritionalInfo) {
 
     // Categorize nutrients
     detailedNutrients.forEach(([key, value]) => {
-        let displayValue = value;
-        let unit = '';
-        
-        if (typeof value === 'number') {
-            if (key.includes('(g)')) {
-                displayValue = value.toFixed(1);
-                unit = 'g';
-            } else if (key.includes('(mg)')) {
-                displayValue = value.toFixed(1);
-                unit = 'mg';
-            } else if (key.includes('(%DV)')) {
-                displayValue = value.toFixed(1);
-                unit = '%';
-            }
-        }
-
         const nutrientItem = {
             name: key.replace(/\([^)]*\)/g, '').trim(),
-            value: `${displayValue}${unit}`
+            value: typeof value === 'number' ? value.toFixed(1) : value
         };
 
         if (key.toLowerCase().includes('vitamin')) {
@@ -297,9 +272,7 @@ function createDetailedNutritionSection(nutritionalInfo) {
                 return `
                     <div class="nutrition-category">
                         <div class="category-header">
-                            <div class="category-icon">
-                                <i class="fas ${category.icon}"></i>
-                            </div>
+                            <i class="fas ${category.icon}"></i>
                             ${category.title}
                         </div>
                         <div class="nutrition-items">
@@ -357,235 +330,150 @@ function displayUserProfile() {
             
             <div class="profile-grid">
                 <div class="profile-item">
-                    <div class="profile-icon">
-                        <i class="fas fa-birthday-cake"></i>
-                    </div>
-                    <div class="profile-item-content">
-                        <div class="profile-item-label">Age</div>
-                        <div class="profile-item-value">${userProfile.age} years</div>
-                    </div>
+                    <i class="fas fa-birthday-cake"></i>
+                    <span>Age: ${userProfile.age} years</span>
                 </div>
-                
                 <div class="profile-item">
-                    <div class="profile-icon">
-                        <i class="fas fa-venus-mars"></i>
-                    </div>
-                    <div class="profile-item-content">
-                        <div class="profile-item-label">Gender</div>
-                        <div class="profile-item-value">${userProfile.gender}</div>
-                    </div>
+                    <i class="fas fa-venus-mars"></i>
+                    <span>Gender: ${userProfile.gender}</span>
                 </div>
-                
                 <div class="profile-item">
-                    <div class="profile-icon">
-                        <i class="fas fa-ruler-vertical"></i>
-                    </div>
-                    <div class="profile-item-content">
-                        <div class="profile-item-label">Height</div>
-                        <div class="profile-item-value">${userProfile.height} cm</div>
-                    </div>
+                    <i class="fas fa-ruler-vertical"></i>
+                    <span>Height: ${userProfile.height} cm</span>
                 </div>
-                
                 <div class="profile-item">
-                    <div class="profile-icon">
-                        <i class="fas fa-weight"></i>
-                    </div>
-                    <div class="profile-item-content">
-                        <div class="profile-item-label">Weight</div>
-                        <div class="profile-item-value">${userProfile.weight} kg</div>
-                    </div>
+                    <i class="fas fa-weight"></i>
+                    <span>Weight: ${userProfile.weight} kg</span>
                 </div>
-                
                 <div class="profile-item">
-                    <div class="profile-icon">
-                        <i class="fas fa-running"></i>
-                    </div>
-                    <div class="profile-item-content">
-                        <div class="profile-item-label">Activity Level</div>
-                        <div class="profile-item-value">${userProfile.activityLevel}</div>
-                    </div>
+                    <i class="fas fa-running"></i>
+                    <span>Activity: ${userProfile.activityLevel}</span>
                 </div>
-                
                 <div class="profile-item">
-                    <div class="profile-icon">
-                        <i class="fas fa-bullseye"></i>
-                    </div>
-                    <div class="profile-item-content">
-                        <div class="profile-item-label">Health Goal</div>
-                        <div class="profile-item-value">${userProfile.healthGoal}</div>
-                    </div>
+                    <i class="fas fa-bullseye"></i>
+                    <span>Goal: ${userProfile.healthGoal}</span>
                 </div>
             </div>
 
-            <div class="bmi-card">
-                <div class="bmi-header">
-                    <i class="fas fa-calculator"></i>
-                    <h3>BMI Calculator</h3>
-                    </div>
+            <div class="bmi-section">
+                <h4>BMI Calculator</h4>
                 <div class="bmi-value">${bmi.toFixed(1)}</div>
                 <div class="bmi-category ${bmiCategory.toLowerCase().replace(' ', '-')}">
                     ${bmiCategory}
                 </div>
-                <p class="bmi-description">
-                    Your Body Mass Index (BMI) indicates your weight category for your height.
-                </p>
             </div>
 
             <div class="dietary-restrictions">
-                <h4><i class="fas fa-exclamation-triangle"></i> Dietary Restrictions</h4>
-                <div class="restrictions-list">
-                    ${userProfile.dietaryRestrictions.map(restriction => `
-                        <div class="restriction-item">
-                            <i class="fas fa-ban"></i>
-                            <span>${restriction}</span>
-                        </div>
-                    `).join('')}
-                </div>
+                <h4>Dietary Restrictions</h4>
+                ${userProfile.dietaryRestrictions.map(restriction => `
+                    <div class="restriction-badge">
+                        <i class="fas fa-exclamation-circle"></i>
+                        ${restriction}
+                    </div>
+                `).join('')}
             </div>
         </div>
     `;
 }
 
 function displayRecommendations(recommendations) {
-    const recommendationsListDiv = document.getElementById('recommendations-list');
-    const recommendationReasonsDiv = document.getElementById('recommendation-reasons');
-
-    recommendationReasonsDiv.innerHTML = `
-        <div class="recommendation-criteria-card fade-in">
-            <h3><i class="fas fa-lightbulb"></i> Recommendation Criteria</h3>
-            <ul class="criteria-list">
-                <li class="criteria-item">
-                    <div class="criteria-icon">
-                        <i class="fas fa-dumbbell"></i>
-                    </div>
-                    <span>Rich in protein for muscle maintenance</span>
-                </li>
-                <li class="criteria-item">
-                    <div class="criteria-icon">
-                        <i class="fas fa-bread-slice"></i>
-                    </div>
-                    <span>Balanced complex carbohydrates</span>
-                </li>
-                <li class="criteria-item">
-                    <div class="criteria-icon">
-                        <i class="fas fa-cheese"></i>
-                    </div>
-                    <span>Healthy fats for hormone balance</span>
-                </li>
-                <li class="criteria-item">
-                    <div class="criteria-icon">
-                        <i class="fas fa-seedling"></i>
-                    </div>
-                    <span>High fiber for digestive health</span>
-                </li>
-            </ul>
-        </div>
-    `;
-
+    const recommendationsDiv = document.getElementById('recommendations-list');
+    
     // Clear existing charts
     recommendationCharts.forEach(chart => chart.destroy());
     recommendationCharts = [];
 
-    recommendationsListDiv.innerHTML = recommendations.map((dish, index) => `
+    recommendationsDiv.innerHTML = recommendations.map((dish, index) => `
         <div class="recommendation-card fade-in">
-            <div class="recommendation-header">
-                <h3><i class="fas fa-utensils"></i> ${dish.Name}</h3>
-            </div>
-            <div class="recommendation-chart">
-                <div class="pie-chart">
-                    <canvas id="recommendation-chart-${index}" height="200"></canvas>
-                </div>
-                <div class="ingredients-section">
-                    <h4><i class="fas fa-mortar-pestle"></i> Ingredients</h4>
-                    <p>${dish.Ingredients || 'Ingredients information not available'}</p>
-                </div>
-                <div class="nutrient-list">
-                    <div class="nutrient-item">
-                        <div class="nutrient-icon">
+            <h3>${dish.Name}</h3>
+            <div class="recommendation-content">
+                <canvas id="recommendation-chart-${index}"></canvas>
+                <div class="recommendation-details">
+                    <div class="nutrient-info">
+                        <div class="nutrient-item">
+                            <i class="fas fa-fire"></i>
+                            <span>${dish.Calories} kcal</span>
+                        </div>
+                        <div class="nutrient-item">
                             <i class="fas fa-dumbbell"></i>
+                            <span>${dish['Protein (g)']}g protein</span>
                         </div>
-                        <span>${dish['Protein (g)'].toFixed(1)}g protein</span>
-                    </div>
-                    <div class="nutrient-item">
-                        <div class="nutrient-icon">
+                        <div class="nutrient-item">
                             <i class="fas fa-bread-slice"></i>
+                            <span>${dish['Carbs (g)']}g carbs</span>
                         </div>
-                        <span>${dish['Carbs (g)'].toFixed(1)}g carbs</span>
-                    </div>
-                    <div class="nutrient-item">
-                        <div class="nutrient-icon">
+                        <div class="nutrient-item">
                             <i class="fas fa-cheese"></i>
+                            <span>${dish['Total Fat (g)']}g fat</span>
                         </div>
-                        <span>${dish['Total Fat (g)'].toFixed(1)}g fat</span>
                     </div>
-                    <div class="nutrient-item">
-                        <div class="nutrient-icon">
-                            <i class="fas fa-seedling"></i>
-                        </div>
-                        <span>${dish['Fiber (g)'].toFixed(1)}g fiber</span>
+                    <div class="ingredients">
+                        <h4><i class="fas fa-mortar-pestle"></i> Ingredients</h4>
+                        <p>${dish.Ingredients || 'Ingredients information not available'}</p>
                     </div>
                 </div>
             </div>
         </div>
     `).join('');
 
-    // Create pie charts for each recommendation
+    // Create charts for each recommendation
     recommendations.forEach((dish, index) => {
-        createPieChart(`recommendation-chart-${index}`, {
-            labels: ['Calories', 'Protein', 'Carbs', 'Fat', 'Fiber'],
-            data: [
-                dish['Calories'],
-                dish['Protein (g)'],
-                dish['Carbs (g)'],
-                dish['Total Fat (g)'],
-                dish['Fiber (g)']
-            ],
-            colors: ['#ED64A6', '#F56565', '#48BB78', '#ECC94B', '#4299E1']
-        });
-    });
-}
-
-function createPieChart(canvasId, chartData) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
-    const chart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: chartData.labels,
-            datasets: [{
-                data: chartData.data,
-                backgroundColor: chartData.colors,
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 20,
-                        usePointStyle: true,
-                        font: {
-                            size: 12,
-                            family: "'Poppins', sans-serif"
+        const ctx = document.getElementById(`recommendation-chart-${index}`).getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Protein', 'Carbs', 'Fat', 'Fiber'],
+                datasets: [{
+                    data: [
+                        dish['Protein (g)'],
+                        dish['Carbs (g)'],
+                        dish['Total Fat (g)'],
+                        dish['Fiber (g)']
+                    ],
+                    backgroundColor: [
+                        '#F56565', // Red for protein
+                        '#48BB78', // Green for carbs
+                        '#ECC94B', // Yellow for fat
+                        '#4299E1'  // Blue for fiber
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: {
+                                family: "'Poppins', sans-serif"
+                            }
                         }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label || '';
-                            const value = context.raw.toFixed(1);
-                            return `${label}: ${value}${label === 'Calories' ? ' kcal' : 'g'}`;
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.raw}g`;
+                            }
                         }
                     }
                 }
             }
-        }
+        });
+        recommendationCharts.push(chart);
     });
-    recommendationCharts.push(chart);
-    return chart;
+}
+
+// Utility Functions
+function showLoadingSpinner() {
+    document.getElementById('loading-spinner').classList.remove('hidden');
+}
+
+function hideLoadingSpinner() {
+    document.getElementById('loading-spinner').classList.add('hidden');
 }
 
 function scrollToResults() {
@@ -596,15 +484,7 @@ function scrollToResults() {
     });
 }
 
-function showLoadingSpinner() {
-    document.getElementById('loading-spinner').classList.remove('hidden');
-}
-
-function hideLoadingSpinner() {
-    document.getElementById('loading-spinner').classList.add('hidden');
-}
-
-// Handle window resize for charts
+// Chart Resize Handler
 window.addEventListener('resize', () => {
     if (recommendationCharts.length > 0) {
         recommendationCharts.forEach(chart => {
@@ -615,19 +495,37 @@ window.addEventListener('resize', () => {
     }
 });
 
+// Error Handler
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('Unhandled promise rejection:', event.reason);
+    const resultsDiv = document.getElementById('results');
+    if (resultsDiv) {
+        resultsDiv.innerHTML = `
+            <div class="error">
+                <i class="fas fa-exclamation-circle"></i>
+                An unexpected error occurred. Please try again.
+            </div>
+        `;
+    }
+    hideLoadingSpinner();
+});
+
 // Initialize tooltips if needed
 function initTooltips() {
     const tooltips = document.querySelectorAll('[data-tooltip]');
     tooltips.forEach(tooltip => {
-        // Initialize tooltips if you decide to add them
+        // Add tooltip initialization code here if needed
     });
 }
 
-// Export for testing if needed
+// Export functions for testing if needed
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         calculateBMI,
         getBMICategory,
-        createPieChart
+        displayResults,
+        displayNutritionalInfo,
+        displayUserProfile,
+        displayRecommendations
     };
 }

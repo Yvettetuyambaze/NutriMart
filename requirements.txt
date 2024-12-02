@@ -7,3 +7,4 @@ scikit-learn
 gunicorn
 python-dotenv
 flask-pymongo
+Werkzeug
