@@ -6,13 +6,13 @@ from werkzeug.utils import secure_filename
 import json
 import math
 from functools import lru_cache
-import time
+from food_recognition import predict_dish, get_nutritional_info, get_personalized_recommendations
 
 app = Flask(__name__)
 
 # Configuration
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB limit
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB limit
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
 
 # Set up logging
@@ -27,33 +27,6 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
-
-# Simplified mock functions for testing
-def mock_predict_dish(image_path):
-    # Simulate processing time
-    time.sleep(1)
-    return "Rwandan Dish", 0.95
-
-def mock_nutritional_info(dish_name):
-    return {
-        "Calories": 350,
-        "Protein (g)": 15,
-        "Carbs (g)": 45,
-        "Total Fat (g)": 12,
-        "Fiber (g)": 8,
-        "Ingredients": "Traditional Rwandan ingredients"
-    }
-
-def mock_recommendations(profile, nutrition):
-    return [{
-        "Name": "Healthy Option 1",
-        "Calories": 300,
-        "Protein (g)": 20,
-        "Carbs (g)": 40,
-        "Total Fat (g)": 10,
-        "Fiber (g)": 7,
-        "Ingredients": "Healthy ingredients"
-    }]
 
 @app.route('/')
 def home():
@@ -95,11 +68,17 @@ def predict():
             image.save(filepath)
 
             try:
-                # Use mock functions instead of real ML model
-                predicted_dish, confidence = mock_predict_dish(filepath)
-                nutritional_info = mock_nutritional_info(predicted_dish)
+                # Use the actual model prediction
+                predicted_dish, confidence = predict_dish(filepath)
+                
+                # Get nutritional information
+                nutritional_info = get_nutritional_info(predicted_dish)
+                
+                # Get user profile
                 user_profile = get_user_profile()
-                recommendations = mock_recommendations(user_profile, nutritional_info)
+                
+                # Get recommendations
+                recommendations = get_personalized_recommendations(user_profile, nutritional_info)
 
                 # Clean data for JSON serialization
                 def clean_value(v):
@@ -120,12 +99,7 @@ def predict():
                     'recommendations': recommendations
                 }
 
-                # Clean up uploaded file
-                try:
-                    os.remove(filepath)
-                except Exception as e:
-                    logger.warning(f"Failed to remove uploaded file: {e}")
-
+                logger.info(f"Successfully processed image and predicted: {predicted_dish}")
                 return jsonify(response)
 
             except Exception as e:
@@ -133,7 +107,7 @@ def predict():
                 logger.error(traceback.format_exc())
                 return jsonify({'error': 'Error processing image'}), 500
             finally:
-                # Ensure file cleanup
+                # Clean up uploaded file
                 if os.path.exists(filepath):
                     try:
                         os.remove(filepath)
