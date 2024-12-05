@@ -9,9 +9,8 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def load_model_and_data():
+def initialize_model_and_data():
     try:
-        # Get absolute paths
         current_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(current_dir, 'RwandanFoodAI', 'models', 'best_model_MobileNetV2.h5')
         data_path = os.path.join(current_dir, 'RwandanFoodAI', 'data', 'nutrition', 'rwandan_food_data.csv')
@@ -24,23 +23,18 @@ def load_model_and_data():
         
         return model, df
     except Exception as e:
-        logger.error(f"Error loading model or data: {str(e)}")
+        logger.error(f"Error initializing model and data: {str(e)}")
         raise
 
-# Load model and data
-model, df = load_model_and_data()
+# Initialize model and data
+model, df = initialize_model_and_data()
 
 def preprocess_image(img_path):
     try:
-        if not os.path.exists(img_path):
-            raise FileNotFoundError(f"Image not found at {img_path}")
-            
-        # Load and preprocess image
         img = load_img(img_path, target_size=(224, 224))
         img_array = img_to_array(img)
         img_array = np.expand_dims(img_array, axis=0)
-        img_array = img_array / 255.0
-        
+        img_array /= 255.0
         return img_array
     except Exception as e:
         logger.error(f"Error preprocessing image: {str(e)}")
@@ -48,21 +42,15 @@ def preprocess_image(img_path):
 
 def predict_dish(image_path):
     try:
-        # Preprocess image
         processed_image = preprocess_image(image_path)
-        
-        # Make prediction
         predictions = model.predict(processed_image, verbose=0)
         predicted_class = np.argmax(predictions[0])
         confidence = float(predictions[0][predicted_class])
         
-        # Get class name
         class_names = df['Name'].unique().tolist()
         predicted_dish = class_names[predicted_class]
         
-        logger.info(f"Predicted dish: {predicted_dish} with confidence: {confidence}")
         return predicted_dish, confidence
-        
     except Exception as e:
         logger.error(f"Error in prediction: {str(e)}")
         raise
@@ -70,7 +58,6 @@ def predict_dish(image_path):
 def get_nutritional_info(dish_name):
     try:
         dish_info = df[df['Name'] == dish_name].iloc[0].to_dict()
-        # Convert numpy values to Python native types
         return {k: float(v) if isinstance(v, np.number) else str(v) for k, v in dish_info.items()}
     except Exception as e:
         logger.error(f"Error getting nutritional info: {str(e)}")
@@ -78,7 +65,6 @@ def get_nutritional_info(dish_name):
 
 def get_personalized_recommendations(user_profile, nutritional_info, num_recommendations=3):
     try:
-        # Simple recommendation based on random selection
         recommendations = df.sample(n=min(num_recommendations, len(df)))
         return recommendations[['Name', 'Calories', 'Protein (g)', 'Carbs (g)', 'Total Fat (g)', 'Fiber (g)']].to_dict('records')
     except Exception as e:
