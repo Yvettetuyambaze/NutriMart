@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Input
+from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import os
 import logging
@@ -8,16 +11,22 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def load_data():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    return pd.read_csv(os.path.join(base_dir, 'RwandanFoodAI', 'data', 'nutrition', 'rwandan_food_data.csv'))
-
 def get_model():
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(base_dir, 'RwandanFoodAI', 'models', 'best_model_MobileNetV2.h5')
-    return tf.keras.models.load_model(model_path, compile=False)
+    data_path = os.path.join(base_dir, 'RwandanFoodAI', 'data', 'nutrition', 'rwandan_food_data.csv')
+    num_classes = len(pd.read_csv(data_path)['Name'].unique())
 
-df = load_data()
+    inputs = Input(shape=(224, 224, 3))
+    base = MobileNetV2(include_top=False, weights=None, input_tensor=inputs)
+    x = GlobalAveragePooling2D()(base.output)
+    outputs = Dense(num_classes, activation='softmax')(x)
+    model = Model(inputs, outputs)
+
+    model_path = os.path.join(base_dir, 'RwandanFoodAI', 'models', 'best_model_MobileNetV2.h5')
+    model.load_weights(model_path)
+    return model
+
+df = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'RwandanFoodAI', 'data', 'nutrition', 'rwandan_food_data.csv'))
 model = get_model()
 
 def preprocess_image(img_path):
