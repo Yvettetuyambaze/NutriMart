@@ -2,70 +2,85 @@ import numpy as np
 import pandas as pd
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
-from sklearn.metrics.pairwise import cosine_similarity
 import os
-import gc
-import tensorflow as tf
+import logging
 
-class ModelManager:
-    _instance = None
-    _model = None
-    
-    @classmethod
-    def get_model(cls):
-        if cls._model is None:
-            model_path = os.path.join('RwandanFoodAI', 'models', 'best_model_MobileNetV2.h5')
-            cls._model = load_model(model_path, compile=False)
-        return cls._model
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-    @classmethod
-    def clear_model(cls):
-        cls._model = None
-        gc.collect()
+def load_model_and_data():
+    try:
+        # Get absolute paths
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        model_path = os.path.join(current_dir, 'RwandanFoodAI', 'models', 'best_model_MobileNetV2.h5')
+        data_path = os.path.join(current_dir, 'RwandanFoodAI', 'data', 'nutrition', 'rwandan_food_data.csv')
+        
+        logger.info(f"Loading model from: {model_path}")
+        model = load_model(model_path, compile=False)
+        
+        logger.info(f"Loading data from: {data_path}")
+        df = pd.read_csv(data_path)
+        
+        return model, df
+    except Exception as e:
+        logger.error(f"Error loading model or data: {str(e)}")
+        raise
 
-# Load data once at startup
-data_path = os.path.join('RwandanFoodAI', 'data', 'nutrition', 'rwandan_food_data.csv')
-df = pd.read_csv(data_path)
+# Load model and data
+model, df = load_model_and_data()
 
-def preprocess_image(img_path, target_size=(160, 160)):  # Reduced from 224x224
-    img = load_img(img_path, target_size=target_size)
-    img_array = img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0)
-    img_array /= 255.0
-    return img_array
+def preprocess_image(img_path):
+    try:
+        if not os.path.exists(img_path):
+            raise FileNotFoundError(f"Image not found at {img_path}")
+            
+        # Load and preprocess image
+        img = load_img(img_path, target_size=(224, 224))
+        img_array = img_to_array(img)
+        img_array = np.expand_dims(img_array, axis=0)
+        img_array = img_array / 255.0
+        
+        return img_array
+    except Exception as e:
+        logger.error(f"Error preprocessing image: {str(e)}")
+        raise
 
 def predict_dish(image_path):
     try:
-        # Get model instance
-        model = ModelManager.get_model()
-        
         # Preprocess image
-        preprocessed_image = preprocess_image(image_path)
+        processed_image = preprocess_image(image_path)
         
-        # Make prediction with smaller batch size
-        with tf.device('/cpu:0'):  # Force CPU usage
-            prediction = model.predict(preprocessed_image, batch_size=1)
+        # Make prediction
+        predictions = model.predict(processed_image, verbose=0)
+        predicted_class = np.argmax(predictions[0])
+        confidence = float(predictions[0][predicted_class])
         
-        predicted_class = np.argmax(prediction[0])
-        confidence = float(np.max(prediction[0]))
-        
-        class_names = list(df['Name'].unique())
+        # Get class name
+        class_names = df['Name'].unique().tolist()
         predicted_dish = class_names[predicted_class]
         
-        # Clear memory
-        ModelManager.clear_model()
-        gc.collect()
-        
+        logger.info(f"Predicted dish: {predicted_dish} with confidence: {confidence}")
         return predicted_dish, confidence
+        
     except Exception as e:
-        ModelManager.clear_model()
-        gc.collect()
-        raise e
+        logger.error(f"Error in prediction: {str(e)}")
+        raise
 
 def get_nutritional_info(dish_name):
-    info = df[df['Name'] == dish_name].iloc[0].to_dict()
-    return {k: v.item() if isinstance(v, np.generic) else v for k, v in info.items()}
+    try:
+        dish_info = df[df['Name'] == dish_name].iloc[0].to_dict()
+        # Convert numpy values to Python native types
+        return {k: float(v) if isinstance(v, np.number) else str(v) for k, v in dish_info.items()}
+    except Exception as e:
+        logger.error(f"Error getting nutritional info: {str(e)}")
+        raise
 
-def get_personalized_recommendations(user_profile, nutritional_info, num_recommendations=2):  # Reduced from 3
-    recommended_dishes = df.sample(n=num_recommendations)
-    return recommended_dishes[['Name', 'Calories', 'Protein (g)', 'Carbs (g)', 'Total Fat (g)', 'Fiber (g)']].to_dict('records')
+def get_personalized_recommendations(user_profile, nutritional_info, num_recommendations=3):
+    try:
+        # Simple recommendation based on random selection
+        recommendations = df.sample(n=min(num_recommendations, len(df)))
+        return recommendations[['Name', 'Calories', 'Protein (g)', 'Carbs (g)', 'Total Fat (g)', 'Fiber (g)']].to_dict('records')
+    except Exception as e:
+        logger.error(f"Error getting recommendations: {str(e)}")
+        raise
