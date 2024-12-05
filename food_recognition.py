@@ -8,24 +8,17 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def get_model():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(base_dir, 'RwandanFoodAI', 'models', 'best_model_MobileNetV2.h5')
-    model = tf.keras.models.Sequential([
-        tf.keras.layers.Input(shape=(224, 224, 3)),
-        tf.keras.applications.MobileNetV2(include_top=False, weights=None),
-        tf.keras.layers.GlobalAveragePooling2D(),
-        tf.keras.layers.Dense(len(pd.read_csv(os.path.join(base_dir, 'RwandanFoodAI', 'data', 'nutrition', 'rwandan_food_data.csv'))['Name'].unique()), activation='softmax')
-    ])
-    model.load_weights(model_path)
-    return model
-
 def load_data():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     return pd.read_csv(os.path.join(base_dir, 'RwandanFoodAI', 'data', 'nutrition', 'rwandan_food_data.csv'))
 
-model = get_model()
+def get_model():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(base_dir, 'RwandanFoodAI', 'models', 'best_model_MobileNetV2.h5')
+    return tf.keras.models.load_model(model_path, compile=False)
+
 df = load_data()
+model = get_model()
 
 def preprocess_image(img_path):
     img = load_img(img_path, target_size=(224, 224))
@@ -35,7 +28,7 @@ def preprocess_image(img_path):
 
 def predict_dish(image_path):
     processed_image = preprocess_image(image_path)
-    predictions = model.predict(processed_image)
+    predictions = model.predict(processed_image, verbose=0)
     predicted_class = np.argmax(predictions[0])
     confidence = float(predictions[0][predicted_class])
     predicted_dish = df['Name'].unique()[predicted_class]
