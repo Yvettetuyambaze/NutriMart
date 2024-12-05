@@ -1,73 +1,26 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
+from food_recognition import predict_dish, get_nutritional_info, get_personalized_recommendations
 import os
+import traceback
 import logging
 from werkzeug.utils import secure_filename
+import json
+import math
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 
-# Configuration
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
+
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB limit
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max-limit
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Ensure upload directory exists
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-# Static test data
-STATIC_PREDICTION = {
-    "predicted_dish": "Isombe",
-    "confidence": 0.95,
-    "nutritional_info": {
-        "Name": "Isombe",
-        "Calories": 350,
-        "Protein (g)": 15.5,
-        "Carbs (g)": 45.2,
-        "Total Fat (g)": 12.3,
-        "Fiber (g)": 8.7,
-        "Ingredients": "Cassava leaves, Eggplant, Palm oil, Onions, Spinach, Traditional spices",
-        "Description": "A traditional Rwandan dish made with cassava leaves",
-        "Category": "Main Course",
-        "Region": "Rwanda",
-        "Preparation Time": "45 minutes",
-        "Serving Size": "1 bowl (250g)"
-    },
-    "recommendations": [
-        {
-            "Name": "Igisafuliya",
-            "Calories": 280,
-            "Protein (g)": 18.2,
-            "Carbs (g)": 35.5,
-            "Total Fat (g)": 9.8,
-            "Fiber (g)": 6.5,
-            "Ingredients": "Mixed vegetables, Beans, Potatoes, Traditional spices"
-        },
-        {
-            "Name": "Matoke",
-            "Calories": 320,
-            "Protein (g)": 12.5,
-            "Carbs (g)": 42.3,
-            "Total Fat (g)": 11.2,
-            "Fiber (g)": 7.8,
-            "Ingredients": "Green bananas, Onions, Tomatoes, Spices"
-        },
-        {
-            "Name": "Ubugali",
-            "Calories": 290,
-            "Protein (g)": 14.3,
-            "Carbs (g)": 38.7,
-            "Total Fat (g)": 10.5,
-            "Fiber (g)": 5.9,
-            "Ingredients": "Cassava flour, Water, Traditional accompaniments"
-        }
-    ]
-}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+logging.basicConfig(level=logging.DEBUG)
 
 @app.route('/')
 def home():
@@ -88,39 +41,65 @@ def profile():
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
-                             'favicon.ico', mimetype='image/vnd.microsoft.icon')
+                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    try:
-        if 'image' not in request.files:
-            return jsonify({'error': 'No image uploaded'}), 400
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image uploaded'}), 400
 
-        image = request.files['image']
-        if image.filename == '':
-            return jsonify({'error': 'No image selected'}), 400
+    image = request.files['image']
+    if image.filename == '':
+        return jsonify({'error': 'No image selected'}), 400
 
-        if not allowed_file(image.filename):
-            return jsonify({'error': 'Invalid file type'}), 400
-
-        if image:
-            # Save the image temporarily
+    if image:
+        try:
             filename = secure_filename(image.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             image.save(filepath)
 
-            # Return static prediction data
-            return jsonify(STATIC_PREDICTION)
+            predicted_dish, confidence = predict_dish(filepath)
+            nutritional_info = get_nutritional_info(predicted_dish)
 
-    except Exception as e:
-        logger.error(f"Error: {str(e)}")
-        return jsonify({'error': 'Error processing image'}), 500
+            user_profile = get_user_profile()
+            recommendations = get_personalized_recommendations(user_profile, nutritional_info)
 
-    finally:
-        # Clean up uploaded file if it exists
-        if 'filepath' in locals() and os.path.exists(filepath):
-            os.remove(filepath)
+            # Convert NaN and infinite values to None for JSON serialization
+            def clean_value(v):
+                if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
+                    return None
+                return v
+
+            nutritional_info = {k: clean_value(v) for k, v in nutritional_info.items()}
+            recommendations = [{k: clean_value(v) for k, v in dish.items()} for dish in recommendations]
+
+            response = {
+                'predicted_dish': predicted_dish,
+                'confidence': float(confidence),
+                'nutritional_info': nutritional_info,
+                'recommendations': recommendations
+            }
+            app.logger.debug(f"Response: {json.dumps(response, indent=2)}")
+            return jsonify(response)
+
+        except Exception as e:
+            app.logger.error(f"An error occurred: {str(e)}")
+            app.logger.error(traceback.format_exc())
+            return jsonify({'error': 'Internal Server Error'}), 500
+
+    return jsonify({'error': 'Invalid request'}), 400
+
+def get_user_profile():
+    return {
+        'age': 30,
+        'gender': 'Male',
+        'height': 170,
+        'weight': 70,
+        'activity_level': 'Moderately Active',
+        'health_goal': 'lose_weight',
+        'dietary_restrictions': ['lactose intolerant']
+    }
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))
-    app.run(host='0.0.0.0', port=port)
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    app.run(debug=True)
