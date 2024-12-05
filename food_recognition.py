@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model, load_model
-from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import os
 import logging
@@ -17,12 +17,9 @@ class FoodRecognition:
             self.model_path = os.path.join(base_dir, 'RwandanFoodAI', 'models', 'best_model_MobileNetV2.h5')
             self.data_path = os.path.join(base_dir, 'RwandanFoodAI', 'data', 'nutrition', 'rwandan_food_data.csv')
             
-            # Initialize base model
-            base_model = MobileNetV2(weights=None, include_top=True, classes=len(pd.read_csv(self.data_path)['Name'].unique()))
-            
-            # Load weights
-            base_model.load_weights(self.model_path)
-            self.model = base_model
+            # Load model with custom objects
+            custom_objects = {'tf': tf}
+            self.model = tf.keras.models.load_model(self.model_path, compile=False, custom_objects=custom_objects)
             self.df = pd.read_csv(self.data_path)
             
         except Exception as e:
@@ -37,7 +34,7 @@ class FoodRecognition:
 
     def predict_dish(self, image_path):
         processed_image = self.preprocess_image(image_path)
-        predictions = self.model.predict(processed_image)
+        predictions = self.model.predict(processed_image, verbose=0)
         predicted_class = np.argmax(predictions[0])
         confidence = float(predictions[0][predicted_class])
         predicted_dish = self.df['Name'].unique()[predicted_class]
@@ -51,8 +48,10 @@ class FoodRecognition:
         recommendations = self.df.sample(n=min(3, len(self.df)))
         return recommendations[['Name', 'Calories', 'Protein (g)', 'Carbs (g)', 'Total Fat (g)', 'Fiber (g)']].to_dict('records')
 
+# Initialize
 food_recognition = FoodRecognition()
 
+# Interface functions
 def predict_dish(image_path):
     return food_recognition.predict_dish(image_path)
 
