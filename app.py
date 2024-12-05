@@ -1,24 +1,19 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from food_recognition import predict_dish, get_nutritional_info, get_personalized_recommendations
 import os
-import traceback
 import logging
 from werkzeug.utils import secure_filename
-import json
-import math
 
 app = Flask(__name__)
 
 # Configuration
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB limit
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
+app.config.update(
+    UPLOAD_FOLDER='static/uploads',
+    MAX_CONTENT_LENGTH=5 * 1024 * 1024,
+    ALLOWED_EXTENSIONS={'png', 'jpg', 'jpeg'}
+)
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 def allowed_file(filename):
@@ -35,86 +30,41 @@ def predict():
             return jsonify({'error': 'No image uploaded'}), 400
 
         image = request.files['image']
-        if image.filename == '':
-            return jsonify({'error': 'No image selected'}), 400
+        if image.filename == '' or not allowed_file(image.filename):
+            return jsonify({'error': 'Invalid file'}), 400
 
-        if not allowed_file(image.filename):
-            return jsonify({'error': 'Invalid file type'}), 400
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(image.filename))
+        image.save(filepath)
 
-        filename = secure_filename(image.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        
         try:
-            image.save(filepath)
-            logger.info(f"Image saved to {filepath}")
-            
             predicted_dish, confidence = predict_dish(filepath)
             nutritional_info = get_nutritional_info(predicted_dish)
-            
-            user_profile = get_user_profile()
-            recommendations = get_personalized_recommendations(user_profile, nutritional_info)
-
-            def clean_value(v):
-                if isinstance(v, float):
-                    if math.isnan(v) or math.isinf(v):
-                        return None
-                    return float(f"{v:.2f}")
-                return v
-
-            nutritional_info = {k: clean_value(v) for k, v in nutritional_info.items()}
-            recommendations = [{k: clean_value(v) for k, v in dish.items()} 
-                             for dish in recommendations]
+            recommendations = get_personalized_recommendations(get_user_profile(), nutritional_info)
 
             response = {
+                'status': 'success',
                 'predicted_dish': predicted_dish,
                 'confidence': float(f"{confidence:.2f}"),
                 'nutritional_info': nutritional_info,
                 'recommendations': recommendations
             }
-            
-            logger.info(f"Successfully processed image: {predicted_dish}")
-            return jsonify(response)
 
-        except Exception as e:
-            logger.error(f"Processing error: {str(e)}")
-            logger.error(traceback.format_exc())
-            return jsonify({'error': 'Error processing image'}), 500
+            return jsonify(response)
         finally:
             if os.path.exists(filepath):
                 os.remove(filepath)
 
     except Exception as e:
-        logger.error(f"Server error: {str(e)}")
-        logger.error(traceback.format_exc())
-        return jsonify({'error': 'Server error'}), 500
+        app.logger.error(f"Error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 def get_user_profile():
     return {
         'age': 30,
-        'gender': 'Male',
-        'height': 170,
         'weight': 70,
-        'activity_level': 'Moderately Active',
-        'health_goal': 'lose_weight',
-        'dietary_restrictions': ['lactose intolerant']
+        'height': 170,
+        'activity_level': 'moderate'
     }
-
-@app.route('/calorie-tracker')
-def calorie_tracker():
-    return render_template('calorie_tracker.html')
-
-@app.route('/meal-plan')
-def meal_plan():
-    return render_template('meal_plan.html')
-
-@app.route('/profile')
-def profile():
-    return render_template('profile.html')
-
-@app.route('/favicon.ico')
-def favicon():
-    return send_from_directory(os.path.join(app.root_path, 'static'),
-                             'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
