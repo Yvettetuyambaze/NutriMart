@@ -1,26 +1,62 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
-from food_recognition import predict_dish, get_nutritional_info, get_personalized_recommendations
 import os
 import traceback
 import logging
 from werkzeug.utils import secure_filename
 import json
 import math
-
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
-
+# Configuration
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max-limit
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
+
+# Static data for testing
+STATIC_PREDICTION = {
+    "predicted_dish": "Isombe",
+    "confidence": 0.95,
+    "nutritional_info": {
+        "Name": "Isombe",
+        "Calories": 350,
+        "Protein (g)": 15.5,
+        "Carbs (g)": 45.2,
+        "Total Fat (g)": 12.3,
+        "Fiber (g)": 8.7,
+        "Ingredients": "Cassava leaves, Eggplant, Palm oil, Onions, Spinach"
+    },
+    "recommendations": [
+        {
+            "Name": "Igisafuliya",
+            "Calories": 280,
+            "Protein (g)": 18.2,
+            "Carbs (g)": 35.5,
+            "Total Fat (g)": 9.8,
+            "Fiber (g)": 6.5
+        },
+        {
+            "Name": "Matoke",
+            "Calories": 320,
+            "Protein (g)": 12.5,
+            "Carbs (g)": 42.3,
+            "Total Fat (g)": 11.2,
+            "Fiber (g)": 7.8
+        }
+    ]
+}
 
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+# Ensure uploads directory exists
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 @app.route('/')
 def home():
@@ -41,53 +77,36 @@ def profile():
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
-                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+                             'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    if 'image' not in request.files:
-        return jsonify({'error': 'No image uploaded'}), 400
+    try:
+        if 'image' not in request.files:
+            return jsonify({'error': 'No image uploaded'}), 400
 
-    image = request.files['image']
-    if image.filename == '':
-        return jsonify({'error': 'No image selected'}), 400
+        image = request.files['image']
+        if image.filename == '':
+            return jsonify({'error': 'No image selected'}), 400
 
-    if image:
-        try:
-            filename = secure_filename(image.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            image.save(filepath)
+        if not allowed_file(image.filename):
+            return jsonify({'error': 'Invalid file type'}), 400
 
-            predicted_dish, confidence = predict_dish(filepath)
-            nutritional_info = get_nutritional_info(predicted_dish)
+        filename = secure_filename(image.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        image.save(filepath)
 
-            user_profile = get_user_profile()
-            recommendations = get_personalized_recommendations(user_profile, nutritional_info)
+        # Return static prediction for testing
+        return jsonify(STATIC_PREDICTION)
 
-            # Convert NaN and infinite values to None for JSON serialization
-            def clean_value(v):
-                if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
-                    return None
-                return v
+    except Exception as e:
+        logger.error(f"Error: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({'error': str(e)}), 500
 
-            nutritional_info = {k: clean_value(v) for k, v in nutritional_info.items()}
-            recommendations = [{k: clean_value(v) for k, v in dish.items()} for dish in recommendations]
-
-            response = {
-                'predicted_dish': predicted_dish,
-                'confidence': float(confidence),
-                'nutritional_info': nutritional_info,
-                'recommendations': recommendations
-            }
-            app.logger.debug(f"Response: {json.dumps(response, indent=2)}")
-            return jsonify(response)
-
-        except Exception as e:
-            app.logger.error(f"An error occurred: {str(e)}")
-            app.logger.error(traceback.format_exc())
-            return jsonify({'error': 'Internal Server Error'}), 500
-
-    return jsonify({'error': 'Invalid request'}), 400
+    finally:
+        if 'filepath' in locals() and os.path.exists(filepath):
+            os.remove(filepath)
 
 def get_user_profile():
     return {
@@ -101,5 +120,5 @@ def get_user_profile():
     }
 
 if __name__ == '__main__':
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
