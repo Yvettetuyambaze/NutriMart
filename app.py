@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
-from gunicorn.conf import predict_dish, get_nutritional_info, get_personalized_recommendations
+from food_recognition import predict_dish, get_nutritional_info, get_personalized_recommendations
 import os
 import logging
 from werkzeug.utils import secure_filename
@@ -27,7 +27,7 @@ def predict():
     try:
         if 'image' not in request.files:
             return jsonify({'error': 'No image uploaded'}), 400
-
+        
         image = request.files['image']
         if image.filename == '' or not allowed_file(image.filename):
             return jsonify({'error': 'Invalid file'}), 400
@@ -39,7 +39,7 @@ def predict():
             predicted_dish, confidence = predict_dish(filepath)
             nutritional_info = get_nutritional_info(predicted_dish)
             recommendations = get_personalized_recommendations(get_user_profile(), nutritional_info)
-            
+
             response = {
                 'status': 'success',
                 'predicted_dish': predicted_dish,
@@ -48,6 +48,7 @@ def predict():
                 'recommendations': recommendations
             }
             return jsonify(response)
+
         finally:
             if os.path.exists(filepath):
                 os.remove(filepath)
