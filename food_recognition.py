@@ -1,7 +1,7 @@
 import numpy as np
-import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
+import pandas as pd
 import os
 import logging
 
@@ -10,67 +10,36 @@ logger = logging.getLogger(__name__)
 
 class ModelLoader:
     def __init__(self):
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        # Load CSV first
-        csv_path = os.path.join(base_dir, 'RwandanFoodAI', 'data', 'nutrition', 'rwandan_food_data.csv')
-        self.df = pd.read_csv(csv_path)
-        
-        # Get number of classes
-        num_classes = len(self.df['Name'].unique())
-        
-        model_path = os.path.join(base_dir, 'RwandanFoodAI', 'models', 'best_model_MobileNetV2.h5')
-        
         try:
-            # First attempt: Try loading with TF 2.x compatibility
-            self.model = tf.keras.models.load_model(
-                model_path,
-                custom_objects=None,
-                compile=False
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            csv_path = os.path.join(base_dir, 'RwandanFoodAI', 'data', 'nutrition', 'rwandan_food_data.csv')
+            self.df = pd.read_csv(csv_path)
+            logger.info("Successfully loaded nutrition data")
+
+            model_path = os.path.join(base_dir, 'RwandanFoodAI', 'models', 'best_model_MobileNetV2.h5')
+            
+            # Load model with custom options to handle compatibility issues
+            self.model = tf.keras.models.load_model(model_path, compile=False)
+            self.model.compile(
+                optimizer='adam',
+                loss='categorical_crossentropy',
+                metrics=['accuracy']
             )
+            logger.info("Successfully loaded model")
+
         except Exception as e:
-            logger.error(f"First attempt failed: {e}")
-            try:
-                # Second attempt: Try loading with legacy mode
-                self.model = tf.keras.models.load_model(
-                    model_path,
-                    custom_objects={'InputLayer': tf.keras.layers.InputLayer},
-                    compile=False
-                )
-            except Exception as e:
-                logger.error(f"Second attempt failed: {e}")
-                try:
-                    # Third attempt: Try reconstructing the model
-                    base_model = tf.keras.applications.MobileNetV2(
-                        input_shape=(224, 224, 3),
-                        include_top=False,
-                        weights='imagenet'
-                    )
-                    
-                    model = tf.keras.Sequential([
-                        tf.keras.layers.Input(shape=(224, 224, 3)),
-                        base_model,
-                        tf.keras.layers.GlobalAveragePooling2D(),
-                        tf.keras.layers.Dense(1024, activation='relu'),
-                        tf.keras.layers.Dense(num_classes, activation='softmax')
-                    ])
-                    
-                    try:
-                        model.load_weights(model_path)
-                    except:
-                        logger.warning("Could not load weights, using base model")
-                    
-                    self.model = model
-                    
-                except Exception as e:
-                    logger.error(f"Third attempt failed: {e}")
-                    raise
+            logger.error(f"Error in ModelLoader initialization: {e}")
+            raise
 
     def preprocess_image(self, img_path):
-        img = load_img(img_path, target_size=(224, 224))
-        img_array = img_to_array(img)
-        img_array = img_array / 255.0  # Normalize
-        return np.expand_dims(img_array, axis=0)
+        try:
+            img = load_img(img_path, target_size=(224, 224))
+            img_array = img_to_array(img)
+            img_array = img_array / 255.0  # Normalize
+            return np.expand_dims(img_array, axis=0)
+        except Exception as e:
+            logger.error(f"Error in image preprocessing: {e}")
+            raise
 
 # Global model loader instance
 _model_loader = None
@@ -85,29 +54,45 @@ def predict_dish(image_path):
     try:
         model_loader = get_model_loader()
         processed_image = model_loader.preprocess_image(image_path)
-        predictions = model_loader.model.predict(processed_image)
+        predictions = model_loader.model.predict(processed_image, verbose=0)
         predicted_class = np.argmax(predictions[0])
         confidence = float(predictions[0][predicted_class])
         predicted_dish = model_loader.df['Name'].unique()[predicted_class]
+        
+        logger.info(f"Successfully predicted dish: {predicted_dish} with confidence: {confidence}")
         return predicted_dish, confidence
     except Exception as e:
-        logger.error(f"Prediction error: {e}")
+        logger.error(f"Error in dish prediction: {e}")
         raise
 
 def get_nutritional_info(dish_name):
     try:
         model_loader = get_model_loader()
         info = model_loader.df[model_loader.df['Name'] == dish_name].iloc[0].to_dict()
-        return {k: float(v) if isinstance(v, np.number) else str(v) for k, v in info.items()}
+        return {k: float(v) if isinstance(v, (int, float)) else str(v) for k, v in info.items()}
     except Exception as e:
-        logger.error(f"Nutrition info error: {e}")
+        logger.error(f"Error getting nutritional info: {e}")
         raise
 
 def get_personalized_recommendations(user_profile, nutritional_info):
     try:
         model_loader = get_model_loader()
-        recommendations = model_loader.df.sample(n=min(3, len(model_loader.df)))
+        
+        # Filter based on health goals
+        if user_profile.get('health_goal') == 'lose_weight':
+            df_filtered = model_loader.df[model_loader.df['Calories'] < model_loader.df['Calories'].median()]
+        else:
+            df_filtered = model_loader.df
+
+        # Calculate recommendation scores
+        df_filtered['score'] = (
+            df_filtered['Protein (g)'] * 4 +  # Prioritize protein
+            df_filtered['Fiber (g)'] * 2 -    # Prioritize fiber
+            abs(df_filtered['Calories'] - nutritional_info.get('Calories', 0)) / 100  # Penalize large calorie differences
+        )
+
+        recommendations = df_filtered.nlargest(3, 'score')
         return recommendations[['Name', 'Calories', 'Protein (g)', 'Carbs (g)', 'Total Fat (g)', 'Fiber (g)']].to_dict('records')
     except Exception as e:
-        logger.error(f"Recommendations error: {e}")
+        logger.error(f"Error getting recommendations: {e}")
         raise
