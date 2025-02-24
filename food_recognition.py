@@ -11,6 +11,14 @@ logger = logging.getLogger(__name__)
 class ModelLoader:
     def __init__(self):
         base_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # Load CSV first
+        csv_path = os.path.join(base_dir, 'RwandanFoodAI', 'data', 'nutrition', 'rwandan_food_data.csv')
+        self.df = pd.read_csv(csv_path)
+        
+        # Get number of classes
+        num_classes = len(self.df['Name'].unique())
+        
         model_path = os.path.join(base_dir, 'RwandanFoodAI', 'models', 'best_model_MobileNetV2.h5')
         
         try:
@@ -39,23 +47,24 @@ class ModelLoader:
                         weights='imagenet'
                     )
                     
-                    inputs = tf.keras.Input(shape=(224, 224, 3))
-                    x = base_model(inputs, training=False)
-                    x = tf.keras.layers.GlobalAveragePooling2D()(x)
-                    x = tf.keras.layers.Dense(1024, activation='relu')(x)
-                    outputs = tf.keras.layers.Dense(len(self.get_class_names()), activation='softmax')(x)
+                    model = tf.keras.Sequential([
+                        tf.keras.layers.Input(shape=(224, 224, 3)),
+                        base_model,
+                        tf.keras.layers.GlobalAveragePooling2D(),
+                        tf.keras.layers.Dense(1024, activation='relu'),
+                        tf.keras.layers.Dense(num_classes, activation='softmax')
+                    ])
                     
-                    self.model = tf.keras.Model(inputs, outputs)
-                    self.model.load_weights(model_path)
+                    try:
+                        model.load_weights(model_path)
+                    except:
+                        logger.warning("Could not load weights, using base model")
+                    
+                    self.model = model
+                    
                 except Exception as e:
                     logger.error(f"Third attempt failed: {e}")
                     raise
-
-        csv_path = os.path.join(base_dir, 'RwandanFoodAI', 'data', 'nutrition', 'rwandan_food_data.csv')
-        self.df = pd.read_csv(csv_path)
-
-    def get_class_names(self):
-        return self.df['Name'].unique()
 
     def preprocess_image(self, img_path):
         img = load_img(img_path, target_size=(224, 224))
