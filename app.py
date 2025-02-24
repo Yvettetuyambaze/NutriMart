@@ -5,7 +5,6 @@ import logging
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-# Configuration
 app.config.update(
     UPLOAD_FOLDER='static/uploads',
     MAX_CONTENT_LENGTH=5 * 1024 * 1024,
@@ -42,11 +41,12 @@ def predict():
 
             response = {
                 'status': 'success',
-                'predicted_dish': predicted_dish,
-                'confidence': float(f"{confidence:.2f}"),
+                'predicted_dish': str(predicted_dish),
+                'confidence': float(confidence),
                 'nutritional_info': nutritional_info,
                 'recommendations': recommendations
             }
+            
             return jsonify(response)
 
         finally:
@@ -55,10 +55,12 @@ def predict():
 
     except Exception as e:
         app.logger.error(f"Error during prediction: {str(e)}")
-        return jsonify({'error': 'An error occurred during prediction. Please try again.'}), 500
+        return jsonify({
+            'error': 'An error occurred during prediction.',
+            'details': str(e)
+        }), 500
 
 def get_user_profile():
-    # You can later expand this to get real user data
     return {
         'age': 30,
         'weight': 70,
