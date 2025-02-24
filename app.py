@@ -1,11 +1,10 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
-from food_recognition import predict_dish, get_nutritional_info, get_personalized_recommendations
+from gunicorn.conf import predict_dish, get_nutritional_info, get_personalized_recommendations
 import os
 import logging
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-
 # Configuration
 app.config.update(
     UPLOAD_FOLDER='static/uploads',
@@ -40,7 +39,7 @@ def predict():
             predicted_dish, confidence = predict_dish(filepath)
             nutritional_info = get_nutritional_info(predicted_dish)
             recommendations = get_personalized_recommendations(get_user_profile(), nutritional_info)
-
+            
             response = {
                 'status': 'success',
                 'predicted_dish': predicted_dish,
@@ -48,7 +47,6 @@ def predict():
                 'nutritional_info': nutritional_info,
                 'recommendations': recommendations
             }
-
             return jsonify(response)
         finally:
             if os.path.exists(filepath):
