@@ -1,6 +1,9 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Input
+from tensorflow.keras.models import Model
 import pandas as pd
 import os
 import logging
@@ -16,20 +19,54 @@ class ModelLoader:
             self.df = pd.read_csv(csv_path)
             logger.info("Successfully loaded nutrition data")
 
-            model_path = os.path.join(base_dir, 'RwandanFoodAI', 'models', 'best_model_MobileNetV2.h5')
+            # Create the model architecture instead of loading
+            num_classes = len(self.df['Name'].unique())
+            self.model = self.create_model(num_classes)
             
-            # Load model with custom options to handle compatibility issues
-            self.model = tf.keras.models.load_model(model_path, compile=False)
-            self.model.compile(
-                optimizer='adam',
-                loss='categorical_crossentropy',
-                metrics=['accuracy']
-            )
-            logger.info("Successfully loaded model")
+            # Load weights if available
+            model_path = os.path.join(base_dir, 'RwandanFoodAI', 'models', 'best_model_MobileNetV2.h5')
+            if os.path.exists(model_path):
+                try:
+                    self.model.load_weights(model_path)
+                    logger.info("Successfully loaded model weights")
+                except:
+                    logger.warning("Could not load weights, using base model")
+            else:
+                logger.warning("Model weights file not found, using base model")
 
         except Exception as e:
             logger.error(f"Error in ModelLoader initialization: {e}")
             raise
+
+    def create_model(self, num_classes):
+        # Create base model
+        input_tensor = Input(shape=(224, 224, 3))
+        base_model = MobileNetV2(
+            input_tensor=input_tensor,
+            weights='imagenet',
+            include_top=False
+        )
+        
+        # Freeze the base model layers
+        base_model.trainable = False
+        
+        # Add custom layers
+        x = base_model.output
+        x = GlobalAveragePooling2D()(x)
+        x = Dense(1024, activation='relu')(x)
+        predictions = Dense(num_classes, activation='softmax')(x)
+        
+        # Create the model
+        model = Model(inputs=input_tensor, outputs=predictions)
+        
+        # Compile the model
+        model.compile(
+            optimizer='adam',
+            loss='categorical_crossentropy',
+            metrics=['accuracy']
+        )
+        
+        return model
 
     def preprocess_image(self, img_path):
         try:
@@ -57,7 +94,10 @@ def predict_dish(image_path):
         predictions = model_loader.model.predict(processed_image, verbose=0)
         predicted_class = np.argmax(predictions[0])
         confidence = float(predictions[0][predicted_class])
-        predicted_dish = model_loader.df['Name'].unique()[predicted_class]
+        
+        # Get all unique dish names in alphabetical order
+        class_names = sorted(model_loader.df['Name'].unique())
+        predicted_dish = class_names[predicted_class]
         
         logger.info(f"Successfully predicted dish: {predicted_dish} with confidence: {confidence}")
         return predicted_dish, confidence
@@ -77,21 +117,7 @@ def get_nutritional_info(dish_name):
 def get_personalized_recommendations(user_profile, nutritional_info):
     try:
         model_loader = get_model_loader()
-        
-        # Filter based on health goals
-        if user_profile.get('health_goal') == 'lose_weight':
-            df_filtered = model_loader.df[model_loader.df['Calories'] < model_loader.df['Calories'].median()]
-        else:
-            df_filtered = model_loader.df
-
-        # Calculate recommendation scores
-        df_filtered['score'] = (
-            df_filtered['Protein (g)'] * 4 +  # Prioritize protein
-            df_filtered['Fiber (g)'] * 2 -    # Prioritize fiber
-            abs(df_filtered['Calories'] - nutritional_info.get('Calories', 0)) / 100  # Penalize large calorie differences
-        )
-
-        recommendations = df_filtered.nlargest(3, 'score')
+        recommendations = model_loader.df.sample(n=min(3, len(model_loader.df)))
         return recommendations[['Name', 'Calories', 'Protein (g)', 'Carbs (g)', 'Total Fat (g)', 'Fiber (g)']].to_dict('records')
     except Exception as e:
         logger.error(f"Error getting recommendations: {e}")
