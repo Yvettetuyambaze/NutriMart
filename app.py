@@ -30,7 +30,7 @@ def predict():
         
         image = request.files['image']
         if image.filename == '' or not allowed_file(image.filename):
-            return jsonify({'error': 'Invalid file'}), 400
+            return jsonify({'error': 'Invalid file type. Please upload a PNG or JPG image.'}), 400
 
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(image.filename))
         image.save(filepath)
@@ -54,15 +54,17 @@ def predict():
                 os.remove(filepath)
 
     except Exception as e:
-        app.logger.error(f"Error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f"Error during prediction: {str(e)}")
+        return jsonify({'error': 'An error occurred during prediction. Please try again.'}), 500
 
 def get_user_profile():
+    # You can later expand this to get real user data
     return {
         'age': 30,
         'weight': 70,
         'height': 170,
-        'activity_level': 'moderate'
+        'activity_level': 'moderate',
+        'health_goal': 'maintain'
     }
 
 if __name__ == '__main__':
