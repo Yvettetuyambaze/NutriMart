@@ -14,7 +14,6 @@ import logging
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-
 app.config.update(
     SECRET_KEY=os.environ.get('SECRET_KEY', 'nutrimart-dev-secret-change-in-production'),
     UPLOAD_FOLDER='static/uploads',
@@ -433,10 +432,10 @@ def predict():
     try:
         if 'image' not in request.files:
             return jsonify({'error': 'No image uploaded'}), 400
-
+        
         image = request.files['image']
         if image.filename == '' or not allowed_file(image.filename):
-            return jsonify({'error': 'Invalid file'}), 400
+            return jsonify({'error': 'Invalid file type. Please upload a PNG or JPG image.'}), 400
 
         filename = secure_filename(image.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -475,8 +474,11 @@ def predict():
             raise
 
     except Exception as e:
-        app.logger.error(f"Error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f"Error during prediction: {str(e)}")
+        return jsonify({
+            'error': 'An error occurred during prediction.',
+            'details': str(e)
+        }), 500
 
 
 @app.route('/api/add-prediction-to-log', methods=['POST'])
@@ -498,7 +500,6 @@ def add_prediction_to_log():
 
 
 db.init_db()
-
 
 if __name__ == '__main__':
     warm_up_model()
