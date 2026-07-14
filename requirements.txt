@@ -2,7 +2,6 @@ Flask==2.3.3
 Flask-Login==0.6.3
 gunicorn==23.0.0
 tensorflow-cpu==2.15.0
-keras==3.4.1
 numpy==1.24.3
 pandas==2.0.3
 Pillow==10.0.0
@@ -10,3 +9,5 @@ scikit-learn==1.3.0
 Werkzeug==2.3.7
 protobuf==3.20.3
 h5py==3.11.0
+# Keras 3.4.1 is installed separately after TensorFlow (see build.sh / Dockerfile)
+# because tensorflow-cpu 2.15 pins keras<2.16 but our model requires Keras 3.
