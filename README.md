@@ -1,146 +1,104 @@
-# NutriMart - AI-Powered Personal Nutrition Assistant
+# NutriMart
 
-NutriMart is a comprehensive web application that helps users track their nutrition, analyze meals, and maintain a healthy lifestyle with a special focus on Rwandan cuisine. The application uses AI to provide personalized nutrition recommendations and meal analysis.
+Rwandan nutrition platform with AI-powered food recognition, calorie tracking, and meal planning.
 
 ## Features
 
-### 1. Core Functionalities
-- **Calorie Tracking**: Monitor daily caloric intake and expenditure
-- **Meal Planning**: Personalized meal plans with Rwandan dishes
-- **Food Analysis**: AI-powered nutrition analysis of meals
-- **BMI Tracking**: Body Mass Index calculation and monitoring
-- **Profile Management**: Personalized user profiles and progress tracking
+- **Food Recognition** — Upload a photo of Rwandan food for AI-powered nutrition analysis
+- **Calorie Tracker** — Daily calorie and macro tracking dashboard
+- **Meal Plans** — Weekly Rwandan cuisine meal plans with grocery lists
+- **Recipes** — Browse 24+ traditional Rwandan dishes with nutrition data
+- **Profile** — BMI tracking and health profile management
 
-### 2. User Interface
-- **Responsive Design**: Optimized for all devices (mobile, tablet, desktop)
-- **Intuitive Navigation**: Easy-to-use interface with clear categorization
-- **Interactive Elements**: Dynamic charts and progress indicators
-- **Dark Mode Support**: Automatic theme switching based on system preferences
+## Quick Start (Local)
 
-## Technology Stack
+```bash
+# Create virtual environment
+python -m venv venv
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # Mac/Linux
 
-### Frontend
-- HTML5
-- CSS3 (with Custom Properties)
-- JavaScript (Vanilla)
-- Font Awesome Icons
-- Google Fonts (Poppins)
+# Install dependencies
+pip install -r requirements.txt
 
-### Design Features
-- Gradient Backgrounds
-- Card-based Layout
-- Responsive Grid System
-- Interactive Components
-- Custom SVG Icons
+# Run the app
+python app.py
+```
+
+Open http://localhost:10000
+
+## ML Model Setup
+
+Food recognition requires the TensorFlow model file:
+
+```
+RwandanFoodAI/models/best_model_MobileNetV2.h5
+```
+
+Without this file, all other features work normally — only `/predict` is disabled.
+
+## Deploy to Render (Free)
+
+1. Push this repo to GitHub
+2. Go to [render.com](https://render.com) and create a new **Web Service**
+3. Connect your GitHub repo
+4. Render will auto-detect `render.yaml` — or set manually:
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `gunicorn --config gunicorn.conf.py wsgi:app`
+   - **Health Check Path:** `/health`
+5. Deploy — your app will be live at `https://nutrimart.onrender.com`
+
+## Deploy with Docker
+
+```bash
+docker build -t nutrimart .
+docker run -p 10000:10000 nutrimart
+```
+
+## Deploy to Railway / Heroku
+
+```bash
+# Heroku
+heroku create nutrimart-app
+git push heroku main
+
+# Railway — connect repo via dashboard, uses Procfile automatically
+```
+
+## API Endpoints
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/` | Home — food recognition |
+| GET | `/calorie-tracker` | Calorie dashboard |
+| GET | `/meal-plan` | Weekly meal plan |
+| GET | `/profile` | User profile |
+| GET | `/recipes` | Recipe browser |
+| GET | `/health` | Health check |
+| GET | `/api/calorie-data` | Calorie tracking data |
+| GET | `/api/meal-plan?day=1` | Meal plan for day |
+| GET | `/api/recipes` | All recipes JSON |
+| POST | `/predict` | Food image recognition |
+
+## Tech Stack
+
+- **Backend:** Flask 2.3, Gunicorn
+- **ML:** TensorFlow 2.8, MobileNetV2
+- **Frontend:** Vanilla JS, Chart.js, Inter font
+- **Data:** Rwandan food nutrition CSV (24 dishes)
 
 ## Project Structure
+
 ```
-nutrimart/
-├── static/
-│   ├── css/
-│   │   └── styles.css
-│   ├── js/
-│   │   └── main.js
-│   └── images/
-│       └── nutrismartlogo.png
-├── templates/
-│   ├── index.html
-│   ├── profile.html
-│   ├── meal_plan.html
-│   └── calorie_tracker.html
-└── README.md
+NutriMart/
+├── app.py                  # Flask application
+├── food_recognition.py     # ML inference module
+├── wsgi.py                 # Production WSGI entry
+├── gunicorn.conf.py        # Gunicorn config
+├── templates/              # Jinja2 templates
+├── static/                 # CSS, JS, images
+├── RwandanFoodAI/          # ML model & nutrition data
+├── Dockerfile              # Container deployment
+├── render.yaml             # Render.com config
+└── Procfile                # Heroku/Railway config
 ```
-
-## Pages and Components
-
-### 1. Profile Page
-- BMI Calculator
-- Progress Tracking
-- Activity Level Monitoring
-- Health Goals Setting
-
-### 2. Meal Plan
-- Weekly Meal Schedule
-- Rwandan Cuisine Options
-- Nutritional Information
-- Customizable Portions
-
-### 3. Calorie Tracker
-- Daily Intake Monitoring
-- Exercise Tracking
-- Progress Visualization
-- Goal Setting
-
-## Responsive Design Features
-
-### Desktop (1024px+)
-- Full navigation menu
-- Multi-column layouts
-- Detailed visualizations
-
-### Tablet (768px-1024px)
-- Adapted grid layouts
-- Optimized spacing
-- Touch-friendly elements
-
-### Mobile (< 768px)
-- Hamburger menu
-- Single-column layouts
-- Stacked components
-- Touch-optimized buttons
-
-## Installation and Setup
-
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/nutrimart.git
-```
-
-2. Navigate to the project directory:
-```bash
-cd nutrimart
-```
-
-3. Open the project in your web browser:
-```bash
-# Using Python's built-in server
-python -m http.server 5000
-```
-
-4. Access the application at:
-```
-http://localhost:5000
-```
-
-## Browser Support
-
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
-- Mobile browsers
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Contact
-
-- Email: support@nutrimart.com
-- Phone: +250 57121375
-- Website: [www.nutrimart.com](http://www.nutrimart.com)
-
-## Acknowledgments
-
-- Font Awesome for icons
-- Google Fonts for typography
-- Flask framework for backend
-- SQLAlchemy for database management

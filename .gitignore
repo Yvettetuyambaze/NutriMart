@@ -9,6 +9,7 @@ __pycache__/
 
 # Environment Variables
 .env
+nutrimart.db
 
 # Node
 node_modules/
@@ -20,3 +21,4 @@ package-lock.json
 # System Files
 .DS_Store
 Thumbs.db
+cloudflared.exe

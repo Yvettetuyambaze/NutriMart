@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: nutrimart
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --config gunicorn.conf.py wsgi:app
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.18
+      - key: PORT
+        value: 10000
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_PATH
+        value: /tmp/nutrimart.db

@@ -1,0 +1,52 @@
+{% extends "auth_base.html" %}
+{% block title %}NutriMart - Sign Up{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+    <div class="auth-card-header">
+        <div class="auth-icon"><i class="fas fa-user-plus"></i></div>
+        <h1 data-i18n="auth.signup_title">Create Account</h1>
+        <p data-i18n="auth.signup_subtitle">Join NutriMart to track Rwandan food nutrition</p>
+    </div>
+
+    <div id="auth-error" class="auth-error hidden"></div>
+
+    <form id="signup-form" class="auth-form">
+        <div class="form-group">
+            <label data-i18n="auth.full_name">Full Name</label>
+            <input type="text" name="name" required placeholder="Your name" data-i18n-placeholder="auth.name_placeholder">
+        </div>
+        <div class="form-group">
+            <label data-i18n="auth.email">Email</label>
+            <input type="email" name="email" placeholder="email@example.com" data-i18n-placeholder="auth.email_placeholder">
+        </div>
+        <div class="form-group">
+            <label data-i18n="auth.phone">Phone Number</label>
+            <input type="tel" name="phone" placeholder="+250 7XX XXX XXX" data-i18n-placeholder="auth.phone_placeholder">
+        </div>
+        <p class="form-hint" data-i18n="auth.email_phone_hint">Provide email or phone (at least one)</p>
+        <div class="form-group">
+            <label data-i18n="auth.password">Password</label>
+            <input type="password" name="password" required minlength="6" placeholder="••••••••" data-i18n-placeholder="auth.password_placeholder">
+        </div>
+        <div class="form-group">
+            <label data-i18n="auth.confirm_password">Confirm Password</label>
+            <input type="password" name="confirm_password" required minlength="6" placeholder="••••••••" data-i18n-placeholder="auth.confirm_placeholder">
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg auth-submit">
+            <i class="fas fa-user-plus"></i> <span data-i18n="auth.signup_btn">Create Account</span>
+        </button>
+    </form>
+
+    <p class="auth-switch">
+        <span data-i18n="auth.have_account">Already have an account?</span>
+        <a href="/login" data-i18n="auth.login_link">Sign in</a>
+    </p>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>document.body.dataset.i18nTitle = 'auth.page_signup';</script>
+<script src="{{ url_for('static', filename='js/auth.js') }}?v=3.0"></script>
+<script>initAuthForm('signup-form', '/signup');</script>
+{% endblock %}

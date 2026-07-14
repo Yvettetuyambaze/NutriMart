@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="NutriMart - Rwandan food recognition, calorie tracking, and meal planning">
+    <title>{% block title %}NutriMart{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}?v=3.0">
+    <link rel="icon" href="{{ url_for('static', filename='images/logo.svg') }}" type="image/svg+xml">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <header class="site-header">
+        <nav class="nav-container">
+            <a href="/" class="logo-container">
+                <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="NutriMart" class="logo-image">
+                <span class="logo-text">NutriMart</span>
+            </a>
+
+            <div class="nav-right">
+                <div class="lang-switcher">
+                    <button type="button" class="lang-btn" id="lang-toggle" aria-label="Change language" aria-expanded="false">
+                        <i class="fas fa-globe"></i>
+                        <span id="current-lang-label">EN</span>
+                        <i class="fas fa-chevron-down lang-chevron"></i>
+                    </button>
+                    <div class="lang-dropdown" id="lang-dropdown">
+                        <button type="button" class="lang-option" data-lang="en"><span class="lang-flag">EN</span> <span data-i18n="lang.en">English</span></button>
+                        <button type="button" class="lang-option" data-lang="rw"><span class="lang-flag">RW</span> <span data-i18n="lang.rw">Kinyarwanda</span></button>
+                        <button type="button" class="lang-option" data-lang="fr"><span class="lang-flag">FR</span> <span data-i18n="lang.fr">Français</span></button>
+                    </div>
+                </div>
+
+                <button type="button" class="hamburger" data-i18n-aria="menu.open" aria-label="Open menu" aria-expanded="false">
+                    <span></span><span></span><span></span>
+                </button>
+
+                {% if current_user.is_authenticated %}
+                <a href="/profile" class="nav-user-btn" title="Profile">
+                    <i class="fas fa-user-circle"></i>
+                </a>
+                <a href="/logout" class="btn btn-sm btn-outline nav-logout-btn" data-i18n="nav.logout">Logout</a>
+                {% else %}
+                <a href="/login" class="btn btn-sm btn-primary" data-i18n="nav.login">Login</a>
+                {% endif %}
+            </div>
+
+            <ul class="nav-links">
+                <li><a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="fas fa-home"></i> <span data-i18n="nav.home">Home</span></a></li>
+                <li><a href="/calorie-tracker" class="{% if request.path == '/calorie-tracker' %}active{% endif %}"><i class="fas fa-fire"></i> <span data-i18n="nav.calories">Calorie Tracker</span></a></li>
+                <li><a href="/meal-plan" class="{% if request.path == '/meal-plan' %}active{% endif %}"><i class="fas fa-calendar-alt"></i> <span data-i18n="nav.mealplan">Meal Plan</span></a></li>
+                <li><a href="/profile" class="{% if request.path == '/profile' %}active{% endif %}"><i class="fas fa-user"></i> <span data-i18n="nav.profile">Profile</span></a></li>
+                <li><a href="/recipes" class="{% if request.path == '/recipes' %}active{% endif %}"><i class="fas fa-book-open"></i> <span data-i18n="nav.recipes">Recipes</span></a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h3><i class="fas fa-leaf"></i> NutriMart</h3>
+                    <p data-i18n="footer.about">NutriMart helps you reach your health goals.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-link" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3 data-i18n="footer.links">Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="/"><i class="fas fa-chevron-right"></i> <span data-i18n="nav.home">Home</span></a></li>
+                        <li><a href="/calorie-tracker"><i class="fas fa-chevron-right"></i> <span data-i18n="nav.calories">Calorie Tracker</span></a></li>
+                        <li><a href="/meal-plan"><i class="fas fa-chevron-right"></i> <span data-i18n="nav.mealplan">Meal Plan</span></a></li>
+                        <li><a href="/profile"><i class="fas fa-chevron-right"></i> <span data-i18n="nav.profile">Profile</span></a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3 data-i18n="footer.support">Support</h3>
+                    <ul class="footer-links">
+                        <li><a href="mailto:support@nutrimart.rw"><i class="fas fa-envelope"></i> support@nutrimart.rw</a></li>
+                        <li><a href="tel:+250787560027"><i class="fas fa-phone"></i> +250 787 560 027</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3 data-i18n="footer.newsletter">Newsletter</h3>
+                    <p data-i18n="footer.newsletter_desc">Latest tips on nutrition and wellness.</p>
+                    <form class="newsletter-form" onsubmit="return false;">
+                        <input type="email" class="newsletter-input" data-i18n-placeholder="footer.email_placeholder" placeholder="Your email">
+                        <button type="submit" class="newsletter-button"><i class="fas fa-arrow-right"></i></button>
+                    </form>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p data-i18n="footer.copyright">&copy; 2026 NutriMart. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <div id="loading-spinner" class="loading-spinner hidden">
+        <div class="spinner"></div>
+        <p class="spinner-text">Analyzing...</p>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/i18n.js') }}?v=3.0"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=3.0"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

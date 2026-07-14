@@ -1,76 +1,99 @@
 let nutritionChart = null;
 let recommendationCharts = [];
+let lastPredictionResult = null;
+
+function translate(key) {
+    return (typeof window.t === 'function') ? window.t(key) : key;
+}
+
+function fmtNum(value) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n.toFixed(1) : '0.0';
+}
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize navigation
     initializeNavigation();
-    
-    // Initialize form handlers
+    initUploadForm();
+});
+
+function initUploadForm() {
     const uploadForm = document.getElementById('upload-form');
     const imageInput = document.getElementById('image-input');
     const imagePreview = document.getElementById('image-preview');
-    
+    const analyzeBtn = document.getElementById('analyze-btn');
+
     if (imageInput) {
         imageInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    imagePreview.innerHTML = `<img src="${e.target.result}" alt="Uploaded Image">`;
+                reader.onload = (ev) => {
+                    imagePreview.innerHTML = `<img src="${ev.target.result}" alt="Uploaded food">`;
+                    document.getElementById('upload-area')?.classList.add('has-image');
                 };
                 reader.readAsDataURL(file);
             }
         });
     }
-    
-    if (uploadForm) {
-        uploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(uploadForm);
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = `
-                <div class="analyzing">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    Analyzing your dish...
-                </div>
-            `;
-            showLoadingSpinner();
-            
-            try {
-                const response = await fetch('/predict', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("application/json") !== -1) {
-                    const result = await response.json();
-                    if (response.ok) {
-                        displayResults(result);
-                        displayNutritionalInfo(result.nutritional_info);
-                        displayUserProfile();
-                        displayRecommendations(result.recommendations);
-                        scrollToResults();
-                    } else {
-                        throw new Error(result.error || 'Unknown error occurred');
-                    }
-                } else {
-                    const text = await response.text();
-                    throw new Error(`Invalid response format. Status: ${response.status}, Body: ${text}`);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                resultsDiv.innerHTML = `
-                    <div class="error">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Error: ${error.message}
-                    </div>`;
-            } finally {
-                hideLoadingSpinner();
+
+    const handleAnalyze = async (e) => {
+        if (e) e.preventDefault();
+
+        if (!imageInput || !imageInput.files || !imageInput.files[0]) {
+            alert(translate('home.upload_desc'));
+            return;
+        }
+
+        const resultsDiv = document.getElementById('results');
+        if (!resultsDiv) return;
+
+        resultsDiv.innerHTML = `
+            <div class="card-body analyzing">
+                <i class="fas fa-spinner fa-spin"></i>
+                ${translate('home.analyzing')}
+            </div>
+        `;
+        showLoadingSpinner();
+
+        try {
+            const formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+
+            const response = await fetch('/predict', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || translate('home.error'));
             }
-        });
+
+            displayResults(result);
+            lastPredictionResult = result;
+            displayNutritionalInfo(result.nutritional_info);
+            await displayUserProfile();
+            displayRecommendations(result.recommendations || []);
+            scrollToResults();
+        } catch (error) {
+            console.error('Predict error:', error);
+            resultsDiv.innerHTML = `
+                <div class="card-body error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    ${translate('home.error')}: ${error.message}
+                </div>`;
+        } finally {
+            hideLoadingSpinner();
+        }
+    };
+
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', handleAnalyze);
     }
-});
+    if (analyzeBtn) {
+        analyzeBtn.addEventListener('click', handleAnalyze);
+    }
+}
 
 // Navigation Functions
 function initializeNavigation() {
@@ -88,8 +111,9 @@ function initializeNavigation() {
 
         // Close menu when clicking outside
         document.addEventListener('click', (e) => {
-            if (!hamburger.contains(e.target) && 
-                !navLinks.contains(e.target) && 
+            if (!hamburger.contains(e.target) &&
+                !navLinks.contains(e.target) &&
+                !e.target.closest('.lang-switcher') &&
                 navLinks.classList.contains('active')) {
                 closeMenu();
             }
@@ -107,9 +131,10 @@ function initializeNavigation() {
 function toggleMenu() {
     const hamburger = document.querySelector('.hamburger');
     const navLinks = document.querySelector('.nav-links');
+    const isOpen = navLinks.classList.toggle('active');
     hamburger.classList.toggle('active');
-    navLinks.classList.toggle('active');
-    document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
+    hamburger.setAttribute('aria-expanded', isOpen);
+    document.body.style.overflow = isOpen ? 'hidden' : '';
 }
 
 function closeMenu() {
@@ -117,6 +142,7 @@ function closeMenu() {
     const navLinks = document.querySelector('.nav-links');
     hamburger.classList.remove('active');
     navLinks.classList.remove('active');
+    hamburger.setAttribute('aria-expanded', 'false');
     document.body.style.overflow = '';
 }
 
@@ -124,7 +150,15 @@ function closeMenu() {
 function displayResults(result) {
     const resultsDiv = document.getElementById('results');
     const confidence = (result.confidence * 100).toFixed(1);
-    
+    const topList = (result.top_predictions || []).map((item, i) => `
+        <div class="meal-item" style="margin-bottom:0.4rem;">
+            <div class="meal-item-info">
+                <span class="meal-item-name">${i + 1}. ${item.dish}</span>
+            </div>
+            <span class="meal-item-cal">${(item.confidence * 100).toFixed(1)}%</span>
+        </div>
+    `).join('');
+
     resultsDiv.innerHTML = `
         <div class="results-card fade-in">
             <div class="results-header">
@@ -134,17 +168,43 @@ function displayResults(result) {
                 </h3>
                 <div class="confidence-badge">
                     <i class="fas fa-check-circle"></i>
-                    ${confidence}% Confidence
+                    ${translate('home.confidence')}: ${confidence}%
                 </div>
             </div>
+            ${result.model_mode === 'ai' ? `
+                <div style="margin-bottom:1rem;">
+                    <span style="display:inline-flex;align-items:center;gap:0.4rem;background:var(--accent-light);color:var(--accent-dark);padding:0.4rem 0.9rem;border-radius:999px;font-size:0.85rem;font-weight:600;">
+                        <i class="fas fa-robot"></i> ${translate('home.ai_badge')}
+                    </span>
+                </div>
+            ` : ''}
             ${result.nutritional_info.Ingredients ? `
                 <div class="ingredients-section">
-                    <h4><i class="fas fa-mortar-pestle"></i> Ingredients</h4>
+                    <h4><i class="fas fa-mortar-pestle"></i> ${translate('home.ingredients')}</h4>
                     <p>${result.nutritional_info.Ingredients}</p>
                 </div>
             ` : ''}
+            ${topList ? `
+                <div style="margin-top:1rem;">
+                    <h4 style="margin-bottom:0.75rem;font-size:0.95rem;color:var(--text-muted);">
+                        <i class="fas fa-list-ol"></i> ${translate('home.top_guesses')}
+                    </h4>
+                    ${topList}
+                </div>
+            ` : ''}
+            <div class="action-buttons" style="margin-top:1.25rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+                <button class="btn btn-primary btn-sm add-to-log-btn" data-id="${result.prediction_id}">
+                    <i class="fas fa-plus"></i> ${translate('action.add_to_tracker')}
+                </button>
+                <button class="btn btn-outline btn-sm add-to-plan-btn" data-name="${result.predicted_dish}">
+                    <i class="fas fa-calendar-plus"></i> ${translate('action.add_to_plan')}
+                </button>
+            </div>
         </div>
     `;
+
+    resultsDiv.querySelector('.add-to-log-btn')?.addEventListener('click', () => addPredictionToLog(result.prediction_id));
+    resultsDiv.querySelector('.add-to-plan-btn')?.addEventListener('click', () => addDishToMealPlan(result.predicted_dish, result.nutritional_info));
 }
 
 function displayNutritionalInfo(nutritionalInfo) {
@@ -156,9 +216,9 @@ function displayNutritionalInfo(nutritionalInfo) {
     titleSection.innerHTML = `
         <h3>
             <i class="fas fa-chart-pie"></i>
-            Key Nutritional Information
+            ${translate('home.nutrition_title')}
         </h3>
-        <p>Daily values based on a 2000 calorie diet</p>
+        <p>${translate('home.nutrition_subtitle')}</p>
     `;
     resultsDiv.appendChild(titleSection);
     
@@ -167,11 +227,11 @@ function displayNutritionalInfo(nutritionalInfo) {
     nutritionCircles.className = 'nutrition-circles fade-in';
     
     const mainNutrients = [
-        { name: 'Calories', value: nutritionalInfo['Calories'] || 0, unit: 'kcal', max: 2000, icon: 'fa-fire' },
-        { name: 'Protein', value: nutritionalInfo['Protein (g)'] || 0, unit: 'g', max: 50, icon: 'fa-dumbbell' },
-        { name: 'Carbs', value: nutritionalInfo['Carbs (g)'] || 0, unit: 'g', max: 300, icon: 'fa-bread-slice' },
-        { name: 'Fat', value: nutritionalInfo['Total Fat (g)'] || 0, unit: 'g', max: 65, icon: 'fa-cheese', className: 'fats' }, // Changed this line
-        { name: 'Fiber', value: nutritionalInfo['Fiber (g)'] || 0, unit: 'g', max: 30, icon: 'fa-seedling' }
+        { name: translate('home.calories'), value: nutritionalInfo['Calories'] || 0, unit: 'kcal', max: 2000, icon: 'fa-fire' },
+        { name: translate('home.protein'), value: nutritionalInfo['Protein (g)'] || 0, unit: 'g', max: 50, icon: 'fa-dumbbell' },
+        { name: translate('home.carbs'), value: nutritionalInfo['Carbs (g)'] || 0, unit: 'g', max: 300, icon: 'fa-bread-slice' },
+        { name: translate('home.fats'), value: nutritionalInfo['Total Fat (g)'] || 0, unit: 'g', max: 65, icon: 'fa-cheese', className: 'fats' },
+        { name: translate('home.fiber'), value: nutritionalInfo['Fiber (g)'] || 0, unit: 'g', max: 30, icon: 'fa-seedling' }
     ];
     
     mainNutrients.forEach(nutrient => {
@@ -218,26 +278,10 @@ function createDetailedNutritionSection(nutritionalInfo) {
     if (detailedNutrients.length === 0) return null;
 
     const categories = {
-        vitamins: {
-            title: 'Vitamins',
-            icon: 'fa-tablets',
-            items: []
-        },
-        minerals: {
-            title: 'Minerals',
-            icon: 'fa-flask',
-            items: []
-        },
-        fats: {
-            title: 'Fats & Cholesterol',
-            icon: 'fa-oil-can',
-            items: []
-        },
-        others: {
-            title: 'Other Nutrients',
-            icon: 'fa-puzzle-piece',
-            items: []
-        }
+        vitamins: { title: translate('home.vitamins'), icon: 'fa-tablets', items: [] },
+        minerals: { title: translate('home.minerals'), icon: 'fa-flask', items: [] },
+        fats: { title: translate('home.fats_cholesterol'), icon: 'fa-oil-can', items: [] },
+        others: { title: translate('home.other_nutrients'), icon: 'fa-puzzle-piece', items: [] }
     };
 
     // Categorize nutrients
@@ -289,7 +333,7 @@ function createDetailedNutritionSection(nutritionalInfo) {
     detailedNutrition.innerHTML = `
         <h4>
             <i class="fas fa-list-ul"></i>
-            Additional Nutritional Information
+            ${translate('home.detailed_nutrition')}
         </h4>
         <div class="nutrition-categories">
             ${Object.values(categories).map(category => {
@@ -324,35 +368,31 @@ function calculateBMI(weight, height) {
 }
 
 function getBMICategory(bmi) {
-    if (bmi < 18.5) return "Underweight";
-    if (bmi < 25) return "Normal weight";
-    if (bmi < 30) return "Overweight";
-    return "Obese";
+    if (bmi < 18.5) return translate('home.bmi_under');
+    if (bmi < 25) return translate('home.bmi_normal');
+    if (bmi < 30) return translate('home.bmi_over');
+    return translate('home.bmi_obese');
 }
 
 function displayUserProfile() {
     const userProfileDiv = document.getElementById('user-profile');
-    const userProfile = {
-        age: 30,
-        gender: 'Female',
-        height: 160,
-        weight: 70,
-        activityLevel: 'Moderately Active',
-        healthGoal: 'Lose Weight',
-        dietaryRestrictions: ['Lactose Intolerant']
-    };
+    if (!userProfileDiv) return Promise.resolve();
 
-    const bmi = calculateBMI(userProfile.weight, userProfile.height);
-    const bmiCategory = getBMICategory(bmi);
+    return fetch('/api/profile')
+        .then(res => res.json())
+        .then(userProfile => {
+            const bmi = userProfile.bmi || calculateBMI(userProfile.weight, userProfile.height);
+            const bmiCategory = getBMICategory(bmi);
+            const genderLabel = userProfile.gender === 'male' ? translate('auth.male') : translate('home.female');
 
-    userProfileDiv.innerHTML = `
+            userProfileDiv.innerHTML = `
         <div class="profile-card fade-in">
             <div class="profile-header">
                 <div class="profile-avatar">
                     <i class="fas fa-user-circle"></i>
                 </div>
-                <h3 class="profile-name">Your Profile</h3>
-                <p>Health & Fitness Journey</p>
+                <h3 class="profile-name">${userProfile.name || translate('home.profile_title')}</h3>
+                <p>${translate('home.profile_subtitle')}</p>
             </div>
             
             <div class="profile-grid">
@@ -361,8 +401,8 @@ function displayUserProfile() {
                         <i class="fas fa-birthday-cake"></i>
                     </div>
                     <div class="profile-item-content">
-                        <div class="profile-item-label">Age</div>
-                        <div class="profile-item-value">${userProfile.age} years</div>
+                        <div class="profile-item-label">${translate('home.age')}</div>
+                        <div class="profile-item-value">${userProfile.age || '—'} ${translate('home.years')}</div>
                     </div>
                 </div>
                 
@@ -371,8 +411,8 @@ function displayUserProfile() {
                         <i class="fas fa-venus-mars"></i>
                     </div>
                     <div class="profile-item-content">
-                        <div class="profile-item-label">Gender</div>
-                        <div class="profile-item-value">${userProfile.gender}</div>
+                        <div class="profile-item-label">${translate('home.gender')}</div>
+                        <div class="profile-item-value">${genderLabel}</div>
                     </div>
                 </div>
                 
@@ -381,7 +421,7 @@ function displayUserProfile() {
                         <i class="fas fa-ruler-vertical"></i>
                     </div>
                     <div class="profile-item-content">
-                        <div class="profile-item-label">Height</div>
+                        <div class="profile-item-label">${translate('home.height')}</div>
                         <div class="profile-item-value">${userProfile.height} cm</div>
                     </div>
                 </div>
@@ -391,7 +431,7 @@ function displayUserProfile() {
                         <i class="fas fa-weight"></i>
                     </div>
                     <div class="profile-item-content">
-                        <div class="profile-item-label">Weight</div>
+                        <div class="profile-item-label">${translate('home.weight')}</div>
                         <div class="profile-item-value">${userProfile.weight} kg</div>
                     </div>
                 </div>
@@ -401,8 +441,8 @@ function displayUserProfile() {
                         <i class="fas fa-running"></i>
                     </div>
                     <div class="profile-item-content">
-                        <div class="profile-item-label">Activity Level</div>
-                        <div class="profile-item-value">${userProfile.activityLevel}</div>
+                        <div class="profile-item-label">${translate('home.activity')}</div>
+                        <div class="profile-item-value">${translate('auth.' + (userProfile.activity_level || 'moderate'))}</div>
                     </div>
                 </div>
                 
@@ -411,8 +451,8 @@ function displayUserProfile() {
                         <i class="fas fa-bullseye"></i>
                     </div>
                     <div class="profile-item-content">
-                        <div class="profile-item-label">Health Goal</div>
-                        <div class="profile-item-value">${userProfile.healthGoal}</div>
+                        <div class="profile-item-label">${translate('profile.calorie_goal')}</div>
+                        <div class="profile-item-value">${userProfile.calorie_goal || '—'} ${translate('common.cal')}</div>
                     </div>
                 </div>
             </div>
@@ -420,30 +460,20 @@ function displayUserProfile() {
             <div class="bmi-card">
                 <div class="bmi-header">
                     <i class="fas fa-calculator"></i>
-                    <h3>BMI Calculator</h3>
+                    <h3>${translate('home.bmi_title')}</h3>
                     </div>
-                <div class="bmi-value">${bmi.toFixed(1)}</div>
-                <div class="bmi-category ${bmiCategory.toLowerCase().replace(' ', '-')}">
+                <div class="bmi-value">${bmi ? bmi.toFixed(1) : '—'}</div>
+                <div class="bmi-category">
                     ${bmiCategory}
                 </div>
                 <p class="bmi-description">
-                    Your Body Mass Index (BMI) indicates your weight category for your height.
+                    ${translate('home.bmi_desc')}
                 </p>
-            </div>
-
-            <div class="dietary-restrictions">
-                <h4><i class="fas fa-exclamation-triangle"></i> Dietary Restrictions</h4>
-                <div class="restrictions-list">
-                    ${userProfile.dietaryRestrictions.map(restriction => `
-                        <div class="restriction-item">
-                            <i class="fas fa-ban"></i>
-                            <span>${restriction}</span>
-                        </div>
-                    `).join('')}
-                </div>
             </div>
         </div>
     `;
+        })
+        .catch(err => console.error('Profile fetch error:', err));
 }
 
 function displayRecommendations(recommendations) {
@@ -452,31 +482,23 @@ function displayRecommendations(recommendations) {
 
     recommendationReasonsDiv.innerHTML = `
         <div class="recommendation-criteria-card fade-in">
-            <h3><i class="fas fa-lightbulb"></i> Recommendation Criteria</h3>
+            <h3><i class="fas fa-lightbulb"></i> ${translate('home.rec_criteria')}</h3>
             <ul class="criteria-list">
                 <li class="criteria-item">
-                    <div class="criteria-icon">
-                        <i class="fas fa-dumbbell"></i>
-                    </div>
-                    <span>Rich in protein for muscle maintenance</span>
+                    <div class="criteria-icon"><i class="fas fa-dumbbell"></i></div>
+                    <span>${translate('home.rec_protein')}</span>
                 </li>
                 <li class="criteria-item">
-                    <div class="criteria-icon">
-                        <i class="fas fa-bread-slice"></i>
-                    </div>
-                    <span>Balanced complex carbohydrates</span>
+                    <div class="criteria-icon"><i class="fas fa-bread-slice"></i></div>
+                    <span>${translate('home.rec_carbs')}</span>
                 </li>
                 <li class="criteria-item">
-                    <div class="criteria-icon">
-                        <i class="fas fa-cheese"></i>
-                    </div>
-                    <span>Healthy fats for hormone balance</span>
+                    <div class="criteria-icon"><i class="fas fa-cheese"></i></div>
+                    <span>${translate('home.rec_fats')}</span>
                 </li>
                 <li class="criteria-item">
-                    <div class="criteria-icon">
-                        <i class="fas fa-seedling"></i>
-                    </div>
-                    <span>High fiber for digestive health</span>
+                    <div class="criteria-icon"><i class="fas fa-seedling"></i></div>
+                    <span>${translate('home.rec_fiber')}</span>
                 </li>
             </ul>
         </div>
@@ -496,43 +518,58 @@ function displayRecommendations(recommendations) {
                     <canvas id="recommendation-chart-${index}" height="200"></canvas>
                 </div>
                 <div class="ingredients-section">
-                    <h4><i class="fas fa-mortar-pestle"></i> Ingredients</h4>
-                    <p>${dish.Ingredients || 'Ingredients information not available'}</p>
+                    <h4><i class="fas fa-mortar-pestle"></i> ${translate('home.ingredients')}</h4>
+                    <p>${dish.Ingredients || translate('home.no_ingredients')}</p>
                 </div>
                 <div class="nutrient-list">
                     <div class="nutrient-item">
                         <div class="nutrient-icon">
                             <i class="fas fa-dumbbell"></i>
                         </div>
-                        <span>${dish['Protein (g)'].toFixed(1)}g protein</span>
+                        <span>${fmtNum(dish['Protein (g)'])}g ${translate('home.protein').toLowerCase()}</span>
                     </div>
                     <div class="nutrient-item">
                         <div class="nutrient-icon">
                             <i class="fas fa-bread-slice"></i>
                         </div>
-                        <span>${dish['Carbs (g)'].toFixed(1)}g carbs</span>
+                        <span>${fmtNum(dish['Carbs (g)'])}g ${translate('home.carbs').toLowerCase()}</span>
                     </div>
                     <div class="nutrient-item">
                         <div class="nutrient-icon">
                             <i class="fas fa-cheese"></i>
                         </div>
-                        <span>${dish['Total Fat (g)'].toFixed(1)}g fat</span>
+                        <span>${fmtNum(dish['Total Fat (g)'])}g ${translate('home.fats').toLowerCase()}</span>
                     </div>
                     <div class="nutrient-item">
                         <div class="nutrient-icon">
                             <i class="fas fa-seedling"></i>
                         </div>
-                        <span>${dish['Fiber (g)'].toFixed(1)}g fiber</span>
+                        <span>${fmtNum(dish['Fiber (g)'])}g ${translate('home.fiber').toLowerCase()}</span>
                     </div>
                 </div>
+            </div>
+            <div class="action-buttons" style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm rec-add-plan" data-name="${dish.Name}" data-cal="${dish.Calories}" data-protein="${dish['Protein (g)']}" data-carbs="${dish['Carbs (g)']}" data-fat="${dish['Total Fat (g)']}">
+                    <i class="fas fa-calendar-plus"></i> ${translate('action.add_to_plan')}
+                </button>
             </div>
         </div>
     `).join('');
 
+    recommendationsListDiv.querySelectorAll('.rec-add-plan').forEach(btn => {
+        btn.addEventListener('click', () => addDishToMealPlan(btn.dataset.name, {
+            Calories: btn.dataset.cal,
+            'Protein (g)': btn.dataset.protein,
+            'Carbs (g)': btn.dataset.carbs,
+            'Total Fat (g)': btn.dataset.fat,
+        }));
+    });
+
     // Create pie charts for each recommendation
     recommendations.forEach((dish, index) => {
-        createPieChart(`recommendation-chart-${index}`, {
-            labels: ['Calories', 'Protein', 'Carbs', 'Fat', 'Fiber'],
+        try {
+            createPieChart(`recommendation-chart-${index}`, {
+            labels: [translate('home.calories'), translate('home.protein'), translate('home.carbs'), translate('home.fats'), translate('home.fiber')],
             data: [
                 dish['Calories'],
                 dish['Protein (g)'],
@@ -541,7 +578,10 @@ function displayRecommendations(recommendations) {
                 dish['Fiber (g)']
             ],
             colors: ['#ED64A6', '#F56565', '#48BB78', '#ECC94B', '#4299E1']
-        });
+            });
+        } catch (err) {
+            console.warn('Chart render skipped:', err);
+        }
     });
 }
 
@@ -577,7 +617,7 @@ function createPieChart(canvasId, chartData) {
                         label: function(context) {
                             const label = context.label || '';
                             const value = context.raw.toFixed(1);
-                            return `${label}: ${value}${label === 'Calories' ? ' kcal' : 'g'}`;
+                            return `${label}: ${value}${label === translate('home.calories') ? ' kcal' : 'g'}`;
                         }
                     }
                 }
@@ -621,6 +661,42 @@ function initTooltips() {
     tooltips.forEach(tooltip => {
         // Initialize tooltips if you decide to add them
     });
+}
+
+async function addPredictionToLog(predictionId) {
+    try {
+        const res = await fetch('/api/add-prediction-to-log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prediction_id: predictionId, meal_type: 'lunch' }),
+        });
+        if (!res.ok) throw new Error('Failed');
+        alert(translate('action.added_tracker'));
+    } catch (e) {
+        alert(translate('action.error'));
+    }
+}
+
+async function addDishToMealPlan(name, nutrition) {
+    try {
+        const res = await fetch('/api/meal-plan/items', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                day: 1,
+                meal_type: 'lunch',
+                name: name,
+                calories: parseInt(nutrition.Calories || nutrition.calories || 0),
+                protein: parseInt(nutrition['Protein (g)'] || nutrition.protein || 0),
+                carbs: parseInt(nutrition['Carbs (g)'] || nutrition.carbs || 0),
+                fat: parseInt(nutrition['Total Fat (g)'] || nutrition.fat || 0),
+            }),
+        });
+        if (!res.ok) throw new Error('Failed');
+        alert(translate('action.added_plan'));
+    } catch (e) {
+        alert(translate('action.error'));
+    }
 }
 
 // Export for testing if needed

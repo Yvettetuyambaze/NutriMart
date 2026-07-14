@@ -1,0 +1,65 @@
+{% extends "auth_base.html" %}
+{% block title %}NutriMart - Complete Profile{% endblock %}
+
+{% block content %}
+<div class="auth-card auth-card-wide">
+    <div class="auth-card-header">
+        <div class="auth-icon"><i class="fas fa-clipboard-list"></i></div>
+        <h1 data-i18n="auth.onboard_title">Complete Your Profile</h1>
+        <p data-i18n="auth.onboard_subtitle">Tell us about yourself to personalize your nutrition plan</p>
+    </div>
+
+    <div id="auth-error" class="auth-error hidden"></div>
+
+    <form id="onboarding-form" class="auth-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label data-i18n="auth.dob">Date of Birth</label>
+                <input type="date" name="date_of_birth" required>
+            </div>
+            <div class="form-group">
+                <label data-i18n="auth.gender">Gender</label>
+                <select name="gender" required>
+                    <option value="female" data-i18n="auth.female">Female</option>
+                    <option value="male" data-i18n="auth.male">Male</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label data-i18n="auth.height">Height (cm)</label>
+                <input type="number" name="height" required min="100" max="250" placeholder="170">
+            </div>
+            <div class="form-group">
+                <label data-i18n="auth.weight">Weight (kg)</label>
+                <input type="number" name="weight" required min="30" max="300" step="0.1" placeholder="65">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label data-i18n="auth.target_weight">Target Weight (kg)</label>
+                <input type="number" name="target_weight" min="30" max="300" step="0.1" placeholder="60">
+            </div>
+            <div class="form-group">
+                <label data-i18n="auth.activity">Activity Level</label>
+                <select name="activity_level">
+                    <option value="sedentary" data-i18n="auth.sedentary">Sedentary</option>
+                    <option value="light" data-i18n="auth.light">Light</option>
+                    <option value="moderate" selected data-i18n="auth.moderate">Moderate</option>
+                    <option value="active" data-i18n="auth.active">Active</option>
+                    <option value="very_active" data-i18n="auth.very_active">Very Active</option>
+                </select>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg auth-submit">
+            <i class="fas fa-check"></i> <span data-i18n="auth.onboard_btn">Start Using NutriMart</span>
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>document.body.dataset.i18nTitle = 'auth.page_onboard';</script>
+<script src="{{ url_for('static', filename='js/auth.js') }}?v=3.0"></script>
+<script>initAuthForm('onboarding-form', '/onboarding');</script>
+{% endblock %}
