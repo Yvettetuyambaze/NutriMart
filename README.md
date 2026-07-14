@@ -43,7 +43,7 @@ Without this file, all other features work normally — only `/predict` is disab
 2. Go to [render.com](https://render.com) and create a new **Web Service**
 3. Connect your GitHub repo
 4. Render will auto-detect `render.yaml` — or set manually:
-   - **Build Command:** `pip install -r requirements.txt`
+   - **Build Command:** `pip install --upgrade pip && pip install -r requirements.txt && pip install "keras==3.4.1" "namex" "optree" "ml-dtypes" "rich"`
    - **Start Command:** `gunicorn --config gunicorn.conf.py wsgi:app`
    - **Health Check Path:** `/health`
 5. Deploy — your app will be live at `https://nutrimart.onrender.com`

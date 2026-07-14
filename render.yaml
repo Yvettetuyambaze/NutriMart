@@ -3,7 +3,7 @@ services:
     name: nutrimart
     runtime: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt && pip install "keras==3.4.1" "namex" "optree" "ml-dtypes" "rich"
     startCommand: gunicorn --config gunicorn.conf.py wsgi:app
     healthCheckPath: /health
     envVars:

@@ -16,9 +16,12 @@ node_modules/
 package-lock.json
 
 # VS Code
-.vscode/
 
 # System Files
 .DS_Store
 Thumbs.db
 cloudflared.exe
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore

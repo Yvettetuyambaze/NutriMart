@@ -33,6 +33,12 @@ def on_starting(server):
 
 def post_fork(server, worker):
     server.log.info(f"Worker spawned (pid: {worker.pid})")
+    try:
+        from food_recognition import warm_up_model
+        warm_up_model()
+        server.log.info("ML model warm-up complete")
+    except Exception as e:
+        server.log.warning(f"ML model warm-up skipped: {e}")
 
 # Performance tuning
 max_requests = 1000
